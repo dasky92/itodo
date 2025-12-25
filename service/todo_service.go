@@ -92,3 +92,12 @@ func (s *TodoService) GetPrevDate(dateStr string) string {
 	t, _ := time.Parse("2006-01-02", dateStr)
 	return t.AddDate(0, 0, -1).Format("2006-01-02")
 }
+
+// FormatDateForDisplay returns a friendly date string (e.g. "2023-10-27 Friday")
+func (s *TodoService) FormatDateForDisplay(dateStr string) string {
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return dateStr
+	}
+	return t.Format("2006-01-02 Monday")
+}

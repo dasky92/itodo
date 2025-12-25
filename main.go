@@ -22,7 +22,7 @@ func main() {
 	svc := service.NewTodoService()
 
 	// Initialize TUI
-	p := tea.NewProgram(tui.NewModel(svc))
+	p := tea.NewProgram(tui.NewModel(svc), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

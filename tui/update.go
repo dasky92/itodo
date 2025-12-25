@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -12,39 +13,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.help.Width = msg.Width
 
 	case tea.KeyMsg:
 		switch m.mode {
 		case Normal:
-			switch msg.String() {
-			case "q", "ctrl+c":
+			switch {
+			case key.Matches(msg, m.keys.Quit):
 				return m, tea.Quit
 
-			case "k", "up":
+			case key.Matches(msg, m.keys.Up):
 				if m.cursor > 0 {
 					m.cursor--
 				}
 
-			case "j", "down":
+			case key.Matches(msg, m.keys.Down):
 				if m.cursor < len(m.todos)-1 {
 					m.cursor++
 				}
 
-			case "h", "left":
+			case key.Matches(msg, m.keys.Left):
 				m.selectedDate = m.svc.GetPrevDate(m.selectedDate)
 				m.refreshData()
 
-			case "l", "right":
+			case key.Matches(msg, m.keys.Right):
 				m.selectedDate = m.svc.GetNextDate(m.selectedDate)
 				m.refreshData()
 
-			case "n":
+			case key.Matches(msg, m.keys.New):
 				m.mode = Adding
 				m.textInput.SetValue("")
 				m.textInput.Focus()
 				return m, textinput.Blink
 
-			case "e":
+			case key.Matches(msg, m.keys.Edit):
 				if len(m.todos) > 0 {
 					m.mode = Editing
 					todo := m.todos[m.cursor]
@@ -54,7 +56,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, textinput.Blink
 				}
 
-			case "d":
+			case key.Matches(msg, m.keys.Delete):
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
 					log, err := m.svc.Delete(todo.ID)
@@ -66,7 +68,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
-			case " ":
+			case key.Matches(msg, m.keys.Toggle):
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
 					log, err := m.svc.Toggle(todo.ID)
@@ -77,6 +79,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.refreshData()
 					}
 				}
+
+			case key.Matches(msg, m.keys.Help):
+				m.mode = Helping
+				m.help.ShowAll = true
+			}
+
+		case Helping:
+			switch {
+			case key.Matches(msg, m.keys.Help), msg.String() == "esc", key.Matches(msg, m.keys.Quit):
+				m.mode = Normal
+				m.help.ShowAll = false
 			}
 
 		case Adding:

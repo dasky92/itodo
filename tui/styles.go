@@ -3,33 +3,64 @@ package tui
 import "github.com/charmbracelet/lipgloss"
 
 var (
-	appStyle = lipgloss.NewStyle().Padding(1, 2)
+	// Catppuccin Mocha Palette
+	colBase     = lipgloss.Color("#1e1e2e")
+	colText     = lipgloss.Color("#cdd6f4")
+	colBlue     = lipgloss.Color("#89b4fa")
+	colGreen    = lipgloss.Color("#a6e3a1")
+	colPink     = lipgloss.Color("#f5c2e7")
+	colGray     = lipgloss.Color("#6c7086")
+	colDarkGray = lipgloss.Color("#45475a")
+	colMauve    = lipgloss.Color("#cba6f7")
+	colRed      = lipgloss.Color("#f38ba8")
+	colSurface0 = lipgloss.Color("#313244")
 
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.Color("#25A065")).
-			Padding(0, 1)
+	// Global App Padding
+	appStyle = lipgloss.NewStyle().Padding(1, 4)
 
-	statusStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#A0A0A0")).
-			MarginLeft(1)
-	
+	// Section Headers
+	dateStyle = lipgloss.NewStyle().
+			Foreground(colMauve).
+			Bold(true).
+			Padding(0, 1) // Remove center alignment for flexible layout
+
 	statsStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#7D56F4")).
-			MarginLeft(2)
+			Foreground(colGreen).
+			Bold(true).
+			Padding(0, 1) // Remove center alignment for flexible layout
 
+	// Divider
+	dividerStyle = lipgloss.NewStyle().
+			Foreground(colSurface0).
+			Padding(1, 0) // Vertical breathing room
+
+	// List Items
 	selectedItemStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("205")).
-				Bold(true)
+				Foreground(colPink).
+				Bold(true).
+				PaddingLeft(1).
+				Border(lipgloss.NormalBorder(), false, false, false, true).
+				BorderForeground(colPink).
+				MarginBottom(1) // Add breathing room
 
 	completedItemStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#626262")).
-				Strikethrough(true)
-	
+				Foreground(colGray).
+				Strikethrough(true).
+				PaddingLeft(2).
+				MarginBottom(1) // Add breathing room
+
 	normalItemStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FAFAFA"))
+			Foreground(colText).
+			PaddingLeft(2).
+			MarginBottom(1) // Add breathing room
+
+	// Footer / Logs
+	statusStyle = lipgloss.NewStyle().
+			Foreground(colGray).
+			Italic(true).
+			Padding(0, 1)
 
 	logStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#626262")).
-			Italic(true)
+			Foreground(colGray).
+			Faint(true)
 )

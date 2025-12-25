@@ -4,6 +4,7 @@ import (
 	"itodo/model"
 	"itodo/service"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,6 +15,7 @@ const (
 	Normal Mode = iota
 	Adding
 	Editing
+	Helping
 )
 
 type Model struct {
@@ -23,6 +25,8 @@ type Model struct {
 	selectedDate string
 	mode         Mode
 	textInput    textinput.Model
+	help         help.Model
+	keys         KeyMap
 	logs         []string
 	completed    int
 	pending      int
@@ -36,13 +40,18 @@ func NewModel(svc *service.TodoService) Model {
 	ti := textinput.New()
 	ti.Placeholder = "Enter todo title..."
 	ti.CharLimit = 156
-	ti.Width = 20
+	ti.Width = 30
+
+	h := help.New()
+	h.ShowAll = false // Default to short help
 
 	m := Model{
 		svc:          svc,
 		selectedDate: svc.GetCurrentDate(),
 		mode:         Normal,
 		textInput:    ti,
+		help:         h,
+		keys:         Keys,
 		logs:         []string{},
 	}
 	m.refreshData()
@@ -59,12 +68,12 @@ func (m *Model) refreshData() {
 	if err != nil {
 		m.logs = append(m.logs, "Error fetching stats: "+err.Error())
 	}
-    // Adjust cursor if out of bounds
-    if m.cursor >= len(m.todos) && len(m.todos) > 0 {
-        m.cursor = len(m.todos) - 1
-    } else if len(m.todos) == 0 {
-        m.cursor = 0
-    }
+	// Adjust cursor if out of bounds
+	if m.cursor >= len(m.todos) && len(m.todos) > 0 {
+		m.cursor = len(m.todos) - 1
+	} else if len(m.todos) == 0 {
+		m.cursor = 0
+	}
 }
 
 func (m Model) Init() tea.Cmd {
