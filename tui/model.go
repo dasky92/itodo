@@ -24,7 +24,9 @@ type Model struct {
 	cursor       int
 	selectedDate string
 	mode         Mode
-	textInput    textinput.Model
+	textInput    textinput.Model   // Kept for backward compatibility if needed, but we should use inputs slice
+	inputs       []textinput.Model // 0: Title, 1: Description
+	focusIndex   int               // Which input is focused
 	help         help.Model
 	keys         KeyMap
 	logs         []string
@@ -37,10 +39,19 @@ type Model struct {
 }
 
 func NewModel(svc *service.TodoService) Model {
-	ti := textinput.New()
-	ti.Placeholder = "Enter todo title..."
-	ti.CharLimit = 156
-	ti.Width = 30
+	// Initialize Inputs
+	inputs := make([]textinput.Model, 2)
+
+	inputs[0] = textinput.New()
+	inputs[0].Placeholder = "Title"
+	inputs[0].Focus()
+	inputs[0].CharLimit = 50
+	inputs[0].Width = 30
+
+	inputs[1] = textinput.New()
+	inputs[1].Placeholder = "Description"
+	inputs[1].CharLimit = 200
+	inputs[1].Width = 50
 
 	h := help.New()
 	h.ShowAll = false // Default to short help
@@ -49,7 +60,8 @@ func NewModel(svc *service.TodoService) Model {
 		svc:          svc,
 		selectedDate: svc.GetCurrentDate(),
 		mode:         Normal,
-		textInput:    ti,
+		inputs:       inputs,
+		focusIndex:   0,
 		help:         h,
 		keys:         Keys,
 		logs:         []string{},

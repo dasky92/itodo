@@ -10,9 +10,11 @@ type KeyMap struct {
 	New    key.Binding
 	Edit   key.Binding
 	Delete key.Binding
-	Toggle key.Binding
-	Help   key.Binding
-	Quit   key.Binding
+	Toggle  key.Binding
+	Indent  key.Binding
+	Outdent key.Binding
+	Help    key.Binding
+	Quit    key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -23,7 +25,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Left, k.Right},
 		{k.New, k.Edit, k.Delete, k.Toggle},
-		{k.Help, k.Quit},
+		{k.Indent, k.Outdent, k.Help, k.Quit},
 	}
 }
 
@@ -59,6 +61,14 @@ var Keys = KeyMap{
 	Toggle: key.NewBinding(
 		key.WithKeys(" "),
 		key.WithHelp("space", "toggle status"),
+	),
+	Indent: key.NewBinding(
+		key.WithKeys(">", "."),
+		key.WithHelp(">", "indent"),
+	),
+	Outdent: key.NewBinding(
+		key.WithKeys("<", ","),
+		key.WithHelp("<", "outdent"),
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),

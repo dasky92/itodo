@@ -49,6 +49,12 @@ func (m Model) View() string {
 		for i, todo := range m.todos {
 			line := todo.Title
 
+			// Indent child tasks
+			prefix := ""
+			if todo.ParentID != nil {
+				prefix = "    "
+			}
+
 			// Icon selection
 			icon := "○"
 			if todo.IsCompleted {
@@ -56,7 +62,7 @@ func (m Model) View() string {
 			}
 
 			// Render item
-			str := fmt.Sprintf("%s %s", icon, line)
+			str := fmt.Sprintf("%s%s %s", prefix, icon, line)
 
 			var renderedRow string
 			if m.cursor == i {
@@ -86,7 +92,14 @@ func (m Model) View() string {
 		if m.mode == Editing {
 			title = "Edit Todo:"
 		}
-		footerView = fmt.Sprintf("%s\n%s\n(esc to cancel, enter to save)", title, m.textInput.View())
+
+		// Input View
+		inputView := lipgloss.JoinVertical(lipgloss.Left,
+			fmt.Sprintf("Title: %s", m.inputs[0].View()),
+			fmt.Sprintf("Desc : %s", m.inputs[1].View()),
+		)
+
+		footerView = fmt.Sprintf("%s\n%s\n(tab to switch, esc to cancel, enter to save)", title, inputView)
 	} else if m.mode == Helping {
 		footerView = m.help.View(m.keys)
 	} else {

@@ -16,11 +16,11 @@ func NewTodoService() *TodoService {
 }
 
 // Add creates a new todo and returns a log message
-func (s *TodoService) Add(title string, date string) (string, error) {
+func (s *TodoService) Add(title string, description string, date string) (string, error) {
 	if title == "" {
 		return "", fmt.Errorf("title cannot be empty")
 	}
-	_, err := model.CreateTodo(title, date)
+	_, err := model.CreateTodo(title, description, date)
 	if err != nil {
 		return "", err
 	}
@@ -57,18 +57,85 @@ func (s *TodoService) Delete(id uint) (string, error) {
 	return fmt.Sprintf("Deleted todo: %s", todo.Title), nil
 }
 
-// Edit updates a todo title
-func (s *TodoService) Edit(id uint, newTitle string) (string, error) {
+// Edit updates a todo title and description
+func (s *TodoService) Edit(id uint, newTitle string, newDescription string) (string, error) {
 	todo, err := model.GetTodoByID(id)
 	if err != nil {
 		return "", err
 	}
 	oldTitle := todo.Title
 	todo.Title = newTitle
+	todo.Description = newDescription
 	if err := model.UpdateTodo(todo); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Updated todo '%s' to '%s'", oldTitle, newTitle), nil
+	return fmt.Sprintf("Updated todo '%s'", oldTitle), nil
+}
+
+// IndentTodo makes the current todo a child of the previous todo
+func (s *TodoService) IndentTodo(currentID uint, prevID uint) (string, error) {
+	if prevID == 0 {
+		return "", fmt.Errorf("no previous todo to indent under")
+	}
+
+	curr, err := model.GetTodoByID(currentID)
+	if err != nil {
+		return "", err
+	}
+
+	// Check if current todo has children. If so, prevent indentation.
+	hasChildren, err := model.HasChildren(currentID)
+	if err != nil {
+		return "", err
+	}
+	if hasChildren {
+		return "", fmt.Errorf("cannot indent a task that has sub-tasks")
+	}
+
+	prev, err := model.GetTodoByID(prevID)
+	if err != nil {
+		return "", err
+	}
+
+	// Logic for Indentation:
+	// 1. If 'prev' is a Root task (ParentID == nil):
+	//    'curr' becomes a child of 'prev'.
+	// 2. If 'prev' is already a Child task (ParentID != nil):
+	//    'curr' becomes a sibling of 'prev' (adopts prev.ParentID).
+	//    This prevents nesting deeper than 1 level, but allows multiple children under one parent.
+
+	if prev.ParentID == nil {
+		// Case 1: Indent under root
+		curr.ParentID = &prev.ID
+	} else {
+		// Case 2: Indent as sibling (same parent as prev)
+		curr.ParentID = prev.ParentID
+	}
+
+	if err := model.UpdateTodo(curr); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Indented todo '%s'", curr.Title), nil
+}
+
+// OutdentTodo makes the current todo a root item
+func (s *TodoService) OutdentTodo(id uint) (string, error) {
+	todo, err := model.GetTodoByID(id)
+	if err != nil {
+		return "", err
+	}
+
+	if todo.ParentID == nil {
+		return "", fmt.Errorf("todo is already at root level")
+	}
+
+	todo.ParentID = nil
+	if err := model.UpdateTodo(todo); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Outdented todo '%s'", todo.Title), nil
 }
 
 // GetStats returns stats for a date
