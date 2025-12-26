@@ -17,27 +17,59 @@ func (m Model) View() string {
 	}
 	divider := dividerStyle.Render(strings.Repeat("┈", width))
 
-	// 1. Header: Date + Stats (Horizontal Layout)
-	// Format: [ 📅 YYYY-MM-DD Weekday ] ....... [ ✔ N  ☐ M ]
-
+	// 1. Header: Date + Title + Progress (3-Column Layout)
+	// Left: Date
 	formattedDate := m.svc.FormatDateForDisplay(m.selectedDate)
 	dateStr := fmt.Sprintf("📅 %s", formattedDate)
-	statsStr := fmt.Sprintf("✔ %d  ☐ %d", m.completed, m.pending)
+	leftView := dateStyle.Render(dateStr)
 
-	// Calculate spacing
-	dateWidth := lipgloss.Width(dateStr) + 2   // +2 for padding
-	statsWidth := lipgloss.Width(statsStr) + 2 // +2 for padding
+	// Center: Title
+	titleStr := "Daily Tasks"
+	centerView := titleStyle.Render(titleStr)
 
-	gapWidth := width - dateWidth - statsWidth
-	if gapWidth < 1 {
-		gapWidth = 1
+	// Right: Progress Bar + Total Count
+	total := m.completed + m.pending
+	percent := 0.0
+	if total > 0 {
+		percent = float64(m.completed) / float64(total)
 	}
-	gap := strings.Repeat(" ", gapWidth)
+
+	// Progress Bar Rendering
+	barWidth := 10
+	filled := int(percent * float64(barWidth))
+	empty := barWidth - filled
+
+	bar := progressStyle.Render(strings.Repeat(progressFullChar, filled)) +
+		progressEmptyStyle.Render(strings.Repeat(progressEmptyChar, empty))
+
+	statsStr := fmt.Sprintf("%s %d/%d", bar, m.completed, total)
+	rightView := statsStyle.Render(statsStr)
+
+	// Calculate Spacing
+	// We want: [Left] ... [Center] ... [Right]
+	leftWidth := lipgloss.Width(leftView)
+	centerWidth := lipgloss.Width(centerView)
+	rightWidth := lipgloss.Width(rightView)
+
+	// Calculate gaps
+	// Available width for gaps
+	availWidth := width - leftWidth - centerWidth - rightWidth
+	if availWidth < 2 {
+		availWidth = 2
+	}
+
+	gapLWidth := availWidth / 2
+	gapRWidth := availWidth - gapLWidth // Handle odd numbers
+
+	gapL := strings.Repeat(" ", gapLWidth)
+	gapR := strings.Repeat(" ", gapRWidth)
 
 	headerView := lipgloss.JoinHorizontal(lipgloss.Top,
-		dateStyle.Render(dateStr),
-		gap,
-		statsStyle.Render(statsStr),
+		leftView,
+		gapL,
+		centerView,
+		gapR,
+		rightView,
 	)
 
 	// 2. List

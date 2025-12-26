@@ -22,12 +22,22 @@ var (
 	dateStyle = lipgloss.NewStyle().
 			Foreground(colMauve).
 			Bold(true).
-			Padding(0, 1) // Remove center alignment for flexible layout
+			Padding(0, 1)
+
+	titleStyle = lipgloss.NewStyle().
+			Foreground(colText).
+			Bold(true).
+			Padding(0, 1)
 
 	statsStyle = lipgloss.NewStyle().
 			Foreground(colGreen).
 			Bold(true).
-			Padding(0, 1) // Remove center alignment for flexible layout
+			Padding(0, 1)
+
+	progressFullChar  = "█"
+	progressEmptyChar = "░"
+	progressStyle     = lipgloss.NewStyle().Foreground(colGreen)
+	progressEmptyStyle = lipgloss.NewStyle().Foreground(colSurface0)
 
 	// Divider
 	dividerStyle = lipgloss.NewStyle().
