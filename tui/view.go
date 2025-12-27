@@ -70,7 +70,13 @@ func (m Model) View() string {
 	bar := progressStyle.Render(strings.Repeat(progressFullChar, filled)) +
 		progressEmptyStyle.Render(strings.Repeat(progressEmptyChar, empty))
 
-	statsStr := fmt.Sprintf("%s %d/%d", bar, m.completed, total)
+	statsStr := fmt.Sprintf("%s%s%s %d/%d",
+		statusStyle.Render("["),
+		bar,
+		statusStyle.Render("]"),
+		m.completed,
+		total,
+	)
 	rightView := statsStyle.Render(statsStr)
 
 	// Calculate Spacing

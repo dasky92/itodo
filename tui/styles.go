@@ -35,9 +35,9 @@ var (
 			Padding(0, 1)
 
 	progressFullChar   = "█"
-	progressEmptyChar  = "░"
+	progressEmptyChar  = "·"
 	progressStyle      = lipgloss.NewStyle().Foreground(colGreen)
-	progressEmptyStyle = lipgloss.NewStyle().Foreground(colSurface0)
+	progressEmptyStyle = lipgloss.NewStyle().Foreground(colGray)
 
 	// Divider
 	dividerStyle = lipgloss.NewStyle().

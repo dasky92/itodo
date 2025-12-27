@@ -169,10 +169,10 @@ func GetStats(date string) (int, int, error) {
 	var completed int64
 	var pending int64
 
-	if err := DB.Model(&Todo{}).Where("date = ? AND is_completed = ?", date, true).Count(&completed).Error; err != nil {
+	if err := DB.Model(&Todo{}).Where("date = ? AND is_completed = ? AND parent_id IS NULL", date, true).Count(&completed).Error; err != nil {
 		return 0, 0, err
 	}
-	if err := DB.Model(&Todo{}).Where("date = ? AND is_completed = ?", date, false).Count(&pending).Error; err != nil {
+	if err := DB.Model(&Todo{}).Where("date = ? AND is_completed = ? AND parent_id IS NULL", date, false).Count(&pending).Error; err != nil {
 		return 0, 0, err
 	}
 
