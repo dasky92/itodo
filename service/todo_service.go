@@ -20,7 +20,23 @@ func (s *TodoService) Add(title string, description string, date string) (string
 	if title == "" {
 		return "", fmt.Errorf("title cannot be empty")
 	}
-	_, err := model.CreateTodo(title, description, date)
+
+	// 1. Validate Date: Cannot create todos for past dates
+	today := s.GetCurrentDate()
+	if date < today {
+		return "", fmt.Errorf("cannot create tasks for past dates")
+	}
+
+	// 2. Validate Count: Limit daily tasks (e.g., 50)
+	count, err := model.GetTotalCount(date)
+	if err != nil {
+		return "", err
+	}
+	if count >= 50 {
+		return "", fmt.Errorf("daily task limit (50) reached")
+	}
+
+	_, err = model.CreateTodo(title, description, date)
 	if err != nil {
 		return "", err
 	}
@@ -33,8 +49,8 @@ func (s *TodoService) List(date string) ([]model.Todo, error) {
 }
 
 // Toggle toggles the status of a todo
-func (s *TodoService) Toggle(id uint) (string, error) {
-	todo, err := model.ToggleTodoStatus(id)
+func (s *TodoService) Toggle(date string, id uint) (string, error) {
+	todo, err := model.ToggleTodoStatus(date, id)
 	if err != nil {
 		return "", err
 	}
@@ -46,20 +62,20 @@ func (s *TodoService) Toggle(id uint) (string, error) {
 }
 
 // Delete removes a todo
-func (s *TodoService) Delete(id uint) (string, error) {
-	todo, err := model.GetTodoByID(id)
+func (s *TodoService) Delete(date string, id uint) (string, error) {
+	todo, err := model.GetTodoByID(date, id)
 	if err != nil {
 		return "", err
 	}
-	if err := model.DeleteTodo(id); err != nil {
+	if err := model.DeleteTodo(date, id); err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("Deleted todo: %s", todo.Title), nil
 }
 
 // Edit updates a todo title and description
-func (s *TodoService) Edit(id uint, newTitle string, newDescription string) (string, error) {
-	todo, err := model.GetTodoByID(id)
+func (s *TodoService) Edit(date string, id uint, newTitle string, newDescription string) (string, error) {
+	todo, err := model.GetTodoByID(date, id)
 	if err != nil {
 		return "", err
 	}
@@ -73,18 +89,18 @@ func (s *TodoService) Edit(id uint, newTitle string, newDescription string) (str
 }
 
 // IndentTodo makes the current todo a child of the previous todo
-func (s *TodoService) IndentTodo(currentID uint, prevID uint) (string, error) {
+func (s *TodoService) IndentTodo(date string, currentID uint, prevID uint) (string, error) {
 	if prevID == 0 {
 		return "", fmt.Errorf("no previous todo to indent under")
 	}
 
-	curr, err := model.GetTodoByID(currentID)
+	curr, err := model.GetTodoByID(date, currentID)
 	if err != nil {
 		return "", err
 	}
 
 	// Check if current todo has children. If so, prevent indentation.
-	hasChildren, err := model.HasChildren(currentID)
+	hasChildren, err := model.HasChildren(date, currentID)
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +108,7 @@ func (s *TodoService) IndentTodo(currentID uint, prevID uint) (string, error) {
 		return "", fmt.Errorf("cannot indent a task that has sub-tasks")
 	}
 
-	prev, err := model.GetTodoByID(prevID)
+	prev, err := model.GetTodoByID(date, prevID)
 	if err != nil {
 		return "", err
 	}
@@ -120,8 +136,8 @@ func (s *TodoService) IndentTodo(currentID uint, prevID uint) (string, error) {
 }
 
 // OutdentTodo makes the current todo a root item
-func (s *TodoService) OutdentTodo(id uint) (string, error) {
-	todo, err := model.GetTodoByID(id)
+func (s *TodoService) OutdentTodo(date string, id uint) (string, error) {
+	todo, err := model.GetTodoByID(date, id)
 	if err != nil {
 		return "", err
 	}

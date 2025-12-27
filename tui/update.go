@@ -8,12 +8,14 @@ import (
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
 		m.help.Width = msg.Width
+		m.descInput.SetWidth(msg.Width - 10) // Adjust textarea width
 
 	case tea.KeyMsg:
 		switch m.mode {
@@ -41,10 +43,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.refreshData()
 
 			case key.Matches(msg, m.keys.New):
+				// Check if selected date is in the past
+				today := m.svc.GetCurrentDate()
+				if m.selectedDate < today {
+					m.logs = append(m.logs, "Error: Cannot create tasks for past dates")
+					return m, nil
+				}
+
 				m.mode = Adding
-				m.inputs[0].SetValue("")
-				m.inputs[1].SetValue("")
-				m.inputs[0].Focus()
+				m.titleInput.SetValue("")
+				m.descInput.SetValue("")
+				m.titleInput.Focus()
+				m.descInput.Blur()
 				m.focusIndex = 0
 				return m, textinput.Blink
 
@@ -53,9 +63,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mode = Editing
 					todo := m.todos[m.cursor]
 					m.editID = todo.ID
-					m.inputs[0].SetValue(todo.Title)
-					m.inputs[1].SetValue(todo.Description)
-					m.inputs[0].Focus()
+					m.titleInput.SetValue(todo.Title)
+					m.descInput.SetValue(todo.Description)
+					m.titleInput.Focus()
+					m.descInput.Blur()
 					m.focusIndex = 0
 					return m, textinput.Blink
 				}
@@ -63,7 +74,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.Delete):
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
-					log, err := m.svc.Delete(todo.ID)
+					log, err := m.svc.Delete(m.selectedDate, todo.ID)
 					if err != nil {
 						m.logs = append(m.logs, "Error: "+err.Error())
 					} else {
@@ -75,7 +86,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.Toggle):
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
-					log, err := m.svc.Toggle(todo.ID)
+					log, err := m.svc.Toggle(m.selectedDate, todo.ID)
 					if err != nil {
 						m.logs = append(m.logs, "Error: "+err.Error())
 					} else {
@@ -88,7 +99,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(m.todos) > 0 && m.cursor > 0 {
 					todo := m.todos[m.cursor]
 					prevTodo := m.todos[m.cursor-1]
-					log, err := m.svc.IndentTodo(todo.ID, prevTodo.ID)
+					log, err := m.svc.IndentTodo(m.selectedDate, todo.ID, prevTodo.ID)
 					if err != nil {
 						m.logs = append(m.logs, "Error: "+err.Error())
 					} else {
@@ -100,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.Outdent):
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
-					log, err := m.svc.OutdentTodo(todo.ID)
+					log, err := m.svc.OutdentTodo(m.selectedDate, todo.ID)
 					if err != nil {
 						m.logs = append(m.logs, "Error: "+err.Error())
 					} else {
@@ -121,75 +132,73 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.help.ShowAll = false
 			}
 
-		case Adding:
-			switch msg.String() {
-			case "enter":
-				title := m.inputs[0].Value()
-				desc := m.inputs[1].Value()
-				if title != "" {
-					log, err := m.svc.Add(title, desc, m.selectedDate)
-					if err != nil {
-						m.logs = append(m.logs, "Error: "+err.Error())
-					} else {
-						m.logs = append(m.logs, log)
-						m.refreshData()
-						m.mode = Normal
-						m.inputs[0].Blur()
-						m.inputs[1].Blur()
-					}
-				}
-			case "esc":
+		case Adding, Editing:
+			// Form Logic
+			switch {
+			case key.Matches(msg, m.keys.Cancel): // Esc
 				m.mode = Normal
-				m.inputs[0].Blur()
-				m.inputs[1].Blur()
-			case "tab":
-				m.focusIndex = (m.focusIndex + 1) % len(m.inputs)
-				if m.focusIndex == 0 {
-					m.inputs[1].Blur()
-					m.inputs[0].Focus()
-				} else {
-					m.inputs[0].Blur()
-					m.inputs[1].Focus()
-				}
-			default:
-				m.inputs[m.focusIndex], cmd = m.inputs[m.focusIndex].Update(msg)
-			}
+				m.titleInput.Blur()
+				m.descInput.Blur()
 
-		case Editing:
-			switch msg.String() {
-			case "enter":
-				title := m.inputs[0].Value()
-				desc := m.inputs[1].Value()
+			case key.Matches(msg, m.keys.Save): // Ctrl+S
+				title := m.titleInput.Value()
+				desc := m.descInput.Value()
+
 				if title != "" {
-					log, err := m.svc.Edit(m.editID, title, desc)
+					var log string
+					var err error
+
+					if m.mode == Adding {
+						log, err = m.svc.Add(title, desc, m.selectedDate)
+					} else {
+						log, err = m.svc.Edit(m.selectedDate, m.editID, title, desc)
+					}
+
 					if err != nil {
 						m.logs = append(m.logs, "Error: "+err.Error())
 					} else {
 						m.logs = append(m.logs, log)
 						m.refreshData()
 						m.mode = Normal
-						m.inputs[0].Blur()
-						m.inputs[1].Blur()
+						m.titleInput.Blur()
+						m.descInput.Blur()
 					}
 				}
-			case "esc":
-				m.mode = Normal
-				m.inputs[0].Blur()
-				m.inputs[1].Blur()
-			case "tab":
-				m.focusIndex = (m.focusIndex + 1) % len(m.inputs)
+
+			case msg.String() == "tab":
+				m.focusIndex = (m.focusIndex + 1) % 2
 				if m.focusIndex == 0 {
-					m.inputs[1].Blur()
-					m.inputs[0].Focus()
+					m.descInput.Blur()
+					m.titleInput.Focus()
 				} else {
-					m.inputs[0].Blur()
-					m.inputs[1].Focus()
+					m.titleInput.Blur()
+					m.descInput.Focus()
 				}
-			default:
-				m.inputs[m.focusIndex], cmd = m.inputs[m.focusIndex].Update(msg)
+				return m, nil
+
+			case msg.String() == "enter":
+				if m.focusIndex == 0 {
+					// In title, Enter moves to Description
+					m.focusIndex = 1
+					m.titleInput.Blur()
+					m.descInput.Focus()
+					return m, nil
+				}
+				// In description, Enter is handled by textarea for newline
 			}
 		}
 	}
 
-	return m, cmd
+	// Update inputs if in Form mode
+	if m.mode == Adding || m.mode == Editing {
+		if m.focusIndex == 0 {
+			m.titleInput, cmd = m.titleInput.Update(msg)
+			cmds = append(cmds, cmd)
+		} else {
+			m.descInput, cmd = m.descInput.Update(msg)
+			cmds = append(cmds, cmd)
+		}
+	}
+
+	return m, tea.Batch(cmds...)
 }

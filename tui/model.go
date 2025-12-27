@@ -5,6 +5,7 @@ import (
 	"itodo/service"
 
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -24,34 +25,37 @@ type Model struct {
 	cursor       int
 	selectedDate string
 	mode         Mode
-	textInput    textinput.Model   // Kept for backward compatibility if needed, but we should use inputs slice
-	inputs       []textinput.Model // 0: Title, 1: Description
-	focusIndex   int               // Which input is focused
-	help         help.Model
-	keys         KeyMap
-	logs         []string
-	completed    int
-	pending      int
-	width        int
-	height       int
-	err          error
-	editID       uint // ID of the todo being edited
+
+	// Form Inputs
+	titleInput textinput.Model
+	descInput  textarea.Model
+	focusIndex int // 0: Title, 1: Description
+
+	help      help.Model
+	keys      KeyMap
+	logs      []string
+	completed int
+	pending   int
+	width     int
+	height    int
+	err       error
+	editID    uint // ID of the todo being edited
 }
 
 func NewModel(svc *service.TodoService) Model {
-	// Initialize Inputs
-	inputs := make([]textinput.Model, 2)
+	// Initialize Title Input
+	ti := textinput.New()
+	ti.Placeholder = "Task Title"
+	ti.Focus()
+	ti.CharLimit = 100
+	ti.Width = 50
 
-	inputs[0] = textinput.New()
-	inputs[0].Placeholder = "Title"
-	inputs[0].Focus()
-	inputs[0].CharLimit = 50
-	inputs[0].Width = 30
-
-	inputs[1] = textinput.New()
-	inputs[1].Placeholder = "Description"
-	inputs[1].CharLimit = 200
-	inputs[1].Width = 50
+	// Initialize Description Textarea
+	ta := textarea.New()
+	ta.Placeholder = "Description"
+	ta.ShowLineNumbers = false
+	ta.SetHeight(10)
+	ta.SetWidth(50)
 
 	h := help.New()
 	h.ShowAll = false // Default to short help
@@ -60,7 +64,8 @@ func NewModel(svc *service.TodoService) Model {
 		svc:          svc,
 		selectedDate: svc.GetCurrentDate(),
 		mode:         Normal,
-		inputs:       inputs,
+		titleInput:   ti,
+		descInput:    ta,
 		focusIndex:   0,
 		help:         h,
 		keys:         Keys,
@@ -89,5 +94,5 @@ func (m *Model) refreshData() {
 }
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	return textinput.Blink
 }

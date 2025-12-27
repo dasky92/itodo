@@ -34,9 +34,9 @@ var (
 			Bold(true).
 			Padding(0, 1)
 
-	progressFullChar  = "█"
-	progressEmptyChar = "░"
-	progressStyle     = lipgloss.NewStyle().Foreground(colGreen)
+	progressFullChar   = "█"
+	progressEmptyChar  = "░"
+	progressStyle      = lipgloss.NewStyle().Foreground(colGreen)
 	progressEmptyStyle = lipgloss.NewStyle().Foreground(colSurface0)
 
 	// Divider
@@ -73,4 +73,15 @@ var (
 	logStyle = lipgloss.NewStyle().
 			Foreground(colGray).
 			Faint(true)
+
+	// Form
+	formTitleStyle = lipgloss.NewStyle().
+			Foreground(colMauve).
+			Bold(true).
+			PaddingBottom(1)
+
+	labelStyle = lipgloss.NewStyle().
+			Foreground(colBlue).
+			Bold(true).
+			MarginTop(1)
 )

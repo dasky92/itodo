@@ -9,12 +9,12 @@ import (
 
 // Todo represents a task item
 type Todo struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
+	ID          uint      `gorm:"primaryKey;autoIncrement:false" json:"id"` // Manually managed ID per day
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	IsCompleted bool      `json:"is_completed"`
-	ParentID    *uint     `json:"parent_id"`         // Nullable for root items
-	Date        string    `gorm:"index" json:"date"` // Format: YYYY-MM-DD
+	ParentID    *uint     `json:"parent_id"`              // Refers to ID within the same Date
+	Date        string    `gorm:"primaryKey" json:"date"` // Format: YYYY-MM-DD
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -35,9 +35,28 @@ func InitDB(dbPath string) error {
 	return err
 }
 
-// CreateTodo creates a new todo
+// GetNextID calculates the next ID for a given date
+func GetNextID(date string) (uint, error) {
+	var maxID *uint
+	err := DB.Model(&Todo{}).Where("date = ?", date).Select("MAX(id)").Scan(&maxID).Error
+	if err != nil {
+		return 0, err
+	}
+	if maxID == nil {
+		return 1, nil
+	}
+	return *maxID + 1, nil
+}
+
+// CreateTodo creates a new todo with manual ID generation
 func CreateTodo(title string, description string, date string) (*Todo, error) {
+	id, err := GetNextID(date)
+	if err != nil {
+		return nil, err
+	}
+
 	todo := &Todo{
+		ID:          id,
 		Title:       title,
 		Description: description,
 		IsCompleted: false,
@@ -112,10 +131,10 @@ func sortTodos(todos []Todo) {
 	}
 }
 
-// GetTodoByID retrieves a todo by ID
-func GetTodoByID(id uint) (*Todo, error) {
+// GetTodoByID retrieves a todo by Date and ID
+func GetTodoByID(date string, id uint) (*Todo, error) {
 	var todo Todo
-	if err := DB.First(&todo, id).Error; err != nil {
+	if err := DB.Where("date = ? AND id = ?", date, id).First(&todo).Error; err != nil {
 		return nil, err
 	}
 	return &todo, nil
@@ -123,18 +142,19 @@ func GetTodoByID(id uint) (*Todo, error) {
 
 // UpdateTodo updates an existing todo
 func UpdateTodo(todo *Todo) error {
+	// Ensure we save using the composite key
 	return DB.Save(todo).Error
 }
 
-// DeleteTodo deletes a todo by ID
-func DeleteTodo(id uint) error {
-	return DB.Delete(&Todo{}, id).Error
+// DeleteTodo deletes a todo by Date and ID
+func DeleteTodo(date string, id uint) error {
+	return DB.Where("date = ? AND id = ?", date, id).Delete(&Todo{}).Error
 }
 
 // ToggleTodoStatus toggles the completion status of a todo
-func ToggleTodoStatus(id uint) (*Todo, error) {
+func ToggleTodoStatus(date string, id uint) (*Todo, error) {
 	var todo Todo
-	if err := DB.First(&todo, id).Error; err != nil {
+	if err := DB.Where("date = ? AND id = ?", date, id).First(&todo).Error; err != nil {
 		return nil, err
 	}
 	todo.IsCompleted = !todo.IsCompleted
@@ -159,10 +179,19 @@ func GetStats(date string) (int, int, error) {
 	return int(completed), int(pending), nil
 }
 
-// HasChildren checks if a todo has any child tasks
-func HasChildren(id uint) (bool, error) {
+// GetTotalCount returns the total number of todos for a specific date
+func GetTotalCount(date string) (int64, error) {
 	var count int64
-	if err := DB.Model(&Todo{}).Where("parent_id = ?", id).Count(&count).Error; err != nil {
+	if err := DB.Model(&Todo{}).Where("date = ?", date).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// HasChildren checks if a todo has any child tasks (within the same date)
+func HasChildren(date string, id uint) (bool, error) {
+	var count int64
+	if err := DB.Model(&Todo{}).Where("date = ? AND parent_id = ?", date, id).Count(&count).Error; err != nil {
 		return false, err
 	}
 	return count > 0, nil

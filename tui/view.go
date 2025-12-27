@@ -8,16 +8,44 @@ import (
 )
 
 func (m Model) View() string {
+	// 1. Form View (Adding/Editing) - Full Screen
+	if m.mode == Adding || m.mode == Editing {
+		title := "Create New Task"
+		if m.mode == Editing {
+			title = "Edit Task"
+		}
+
+		// Ensure width is safe
+		width := m.width - 10
+		if width < 0 {
+			width = 40
+		}
+		divider := dividerStyle.Render(strings.Repeat("┈", width))
+
+		return appStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
+			formTitleStyle.Render(title),
+
+			labelStyle.Render("Title"),
+			m.titleInput.View(),
+
+			labelStyle.Render("Description"),
+			m.descInput.View(),
+
+			divider,
+			statusStyle.Render("Ctrl+S: Save • Esc: Cancel • Tab: Switch Field • Enter: Next/Newline"),
+		))
+	}
+
+	// 2. Normal View (List)
+
 	// Calculate width for divider
-	// We subtract some padding to be safe, though appStyle handles outer padding
-	// Default to 40 if width is not set yet
 	width := m.width - 10
 	if width < 0 {
 		width = 40
 	}
 	divider := dividerStyle.Render(strings.Repeat("┈", width))
 
-	// 1. Header: Date + Title + Progress (3-Column Layout)
+	// Header: Date + Title + Progress (3-Column Layout)
 	// Left: Date
 	formattedDate := m.svc.FormatDateForDisplay(m.selectedDate)
 	dateStr := fmt.Sprintf("📅 %s", formattedDate)
@@ -46,20 +74,17 @@ func (m Model) View() string {
 	rightView := statsStyle.Render(statsStr)
 
 	// Calculate Spacing
-	// We want: [Left] ... [Center] ... [Right]
 	leftWidth := lipgloss.Width(leftView)
 	centerWidth := lipgloss.Width(centerView)
 	rightWidth := lipgloss.Width(rightView)
 
-	// Calculate gaps
-	// Available width for gaps
 	availWidth := width - leftWidth - centerWidth - rightWidth
 	if availWidth < 2 {
 		availWidth = 2
 	}
 
 	gapLWidth := availWidth / 2
-	gapRWidth := availWidth - gapLWidth // Handle odd numbers
+	gapRWidth := availWidth - gapLWidth
 
 	gapL := strings.Repeat(" ", gapLWidth)
 	gapR := strings.Repeat(" ", gapRWidth)
@@ -72,7 +97,7 @@ func (m Model) View() string {
 		rightView,
 	)
 
-	// 2. List
+	// List
 	var listView string
 	if len(m.todos) == 0 {
 		listView = statusStyle.Render("No todos for this day.")
@@ -117,22 +142,9 @@ func (m Model) View() string {
 		listView = lipgloss.JoinVertical(lipgloss.Left, rows...)
 	}
 
-	// 3. Footer: Logs or Input
+	// Footer: Logs or Help
 	var footerView string
-	if m.mode == Adding || m.mode == Editing {
-		title := "New Todo:"
-		if m.mode == Editing {
-			title = "Edit Todo:"
-		}
-
-		// Input View
-		inputView := lipgloss.JoinVertical(lipgloss.Left,
-			fmt.Sprintf("Title: %s", m.inputs[0].View()),
-			fmt.Sprintf("Desc : %s", m.inputs[1].View()),
-		)
-
-		footerView = fmt.Sprintf("%s\n%s\n(tab to switch, esc to cancel, enter to save)", title, inputView)
-	} else if m.mode == Helping {
+	if m.mode == Helping {
 		footerView = m.help.View(m.keys)
 	} else {
 		// Logs (show last 3, faded)
@@ -151,14 +163,6 @@ func (m Model) View() string {
 			footerView = logStyle.Render("Ready.")
 		}
 	}
-
-	// Combine all sections with dividers
-	// Layout:
-	// Header (Date ... Stats)
-	// ----
-	// List
-	// ----
-	// Footer
 
 	return appStyle.Render(
 		lipgloss.JoinVertical(lipgloss.Left,
