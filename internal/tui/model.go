@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"itodo/internal/config"
 	"itodo/internal/model"
 	"itodo/internal/service"
 
@@ -75,31 +76,39 @@ type Model struct {
 	height    int
 	err       error
 	editID    uint // ID of the todo being edited
+
+	// Configuration
+	cfg *config.Config
 }
 
-func NewModel(svc *service.TodoService) Model {
+func NewModel(svc *service.TodoService, cfg *config.Config) Model {
 	// Initialize Title Input
 	ti := textinput.New()
 	ti.Placeholder = "Task Title"
 	ti.Focus()
-	ti.CharLimit = 100
-	ti.Width = 50
+	ti.CharLimit = cfg.Input.TitleCharLimit
+	ti.Width = cfg.Input.TitleWidth
 
 	// Initialize Description Textarea
 	ta := textarea.New()
 	ta.Placeholder = "Description"
-	ta.ShowLineNumbers = false
-	ta.SetHeight(10)
-	ta.SetWidth(50)
+	ta.ShowLineNumbers = cfg.UI.ShowLineNumbers
+	ta.SetHeight(cfg.Input.DescHeight)
+	ta.SetWidth(cfg.Input.DescWidth)
 
 	h := help.New()
-	h.ShowAll = false // Default to short help
+	h.ShowAll = cfg.UI.ShowFullHelp
+
+	viewType := DailyView
+	if cfg.UI.DefaultView == "weekly" {
+		viewType = WeeklyView
+	}
 
 	m := Model{
 		svc:            svc,
 		selectedDate:   svc.GetCurrentDate(),
 		mode:           Normal,
-		viewType:       DailyView,
+		viewType:       viewType,
 		weeklyTodos:    make(map[string][]model.Todo),
 		weeklyExpanded: make(map[string]bool),
 		titleInput:     ti,
@@ -108,10 +117,18 @@ func NewModel(svc *service.TodoService) Model {
 		help:           h,
 		keys:           Keys,
 		logs:           []string{},
+		cfg:            cfg,
 	}
 
-	// Initialize default theme
-	InitStyles(Themes["Monokai"])
+	// Initialize theme from config
+	themeName := cfg.General.Theme
+	if _, ok := Themes[themeName]; !ok {
+		themeName = "Monokai" // Fallback
+	}
+	InitStyles(Themes[themeName])
+
+	// Initialize keys from config
+	m.keys = InitKeys(cfg)
 
 	m.refreshData()
 	return m

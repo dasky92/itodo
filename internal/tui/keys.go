@@ -1,6 +1,10 @@
 package tui
 
-import "github.com/charmbracelet/bubbles/key"
+import (
+	"itodo/internal/config"
+
+	"github.com/charmbracelet/bubbles/key"
+)
 
 type KeyMap struct {
 	Up       key.Binding
@@ -15,12 +19,12 @@ type KeyMap struct {
 	Outdent  key.Binding
 	Help     key.Binding
 	Quit     key.Binding
-	Save     key.Binding // New
-	Cancel   key.Binding // New
-	Today    key.Binding // New: Go to Today
-	Calendar key.Binding // New: Open Calendar
-	PrevView key.Binding // New: Switch to Daily
-	NextView key.Binding // New: Switch to Weekly
+	Save     key.Binding
+	Cancel   key.Binding
+	Today    key.Binding
+	Calendar key.Binding
+	PrevView key.Binding
+	NextView key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -37,77 +41,92 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-var Keys = KeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("k", "up"),
-		key.WithHelp("k/↑", "up"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("j", "down"),
-		key.WithHelp("j/↓", "down"),
-	),
-	Left: key.NewBinding(
-		key.WithKeys("h", "left"),
-		key.WithHelp("h/←", "prev day"),
-	),
-	Right: key.NewBinding(
-		key.WithKeys("l", "right"),
-		key.WithHelp("l/→", "next day"),
-	),
-	New: key.NewBinding(
-		key.WithKeys("n"),
-		key.WithHelp("n", "new todo"),
-	),
-	Edit: key.NewBinding(
-		key.WithKeys("e"),
-		key.WithHelp("e", "edit todo"),
-	),
-	Delete: key.NewBinding(
-		key.WithKeys("d"),
-		key.WithHelp("d", "delete"),
-	),
-	Toggle: key.NewBinding(
-		key.WithKeys("enter", "tab"),
-		key.WithHelp("enter", "toggle"),
-	),
-	Indent: key.NewBinding(
-		key.WithKeys(">", "."),
-		key.WithHelp(">", "indent"),
-	),
-	Outdent: key.NewBinding(
-		key.WithKeys("<", ","),
-		key.WithHelp("<", "outdent"),
-	),
-	Help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q", "quit"),
-	),
-	Save: key.NewBinding(
-		key.WithKeys("ctrl+s"),
-		key.WithHelp("ctrl+s", "save"),
-	),
-	Cancel: key.NewBinding(
-		key.WithKeys("esc"),
-		key.WithHelp("esc", "cancel"),
-	),
-	Today: key.NewBinding(
-		key.WithKeys(" "),
-		key.WithHelp("space", "go to today"),
-	),
-	Calendar: key.NewBinding(
-		key.WithKeys(";"),
-		key.WithHelp(";", "calendar"),
-	),
-	PrevView: key.NewBinding(
-		key.WithKeys("H"),
-		key.WithHelp("H", "daily"),
-	),
-	NextView: key.NewBinding(
-		key.WithKeys("L"),
-		key.WithHelp("L", "weekly"),
-	),
+// Global default keys, will be overwritten by config
+var Keys = KeyMap{}
+
+// InitKeys initializes the key bindings from configuration
+func InitKeys(cfg *config.Config) KeyMap {
+	k := KeyMap{
+		Up: key.NewBinding(
+			key.WithKeys(cfg.Keys.Up...),
+			key.WithHelp(formatHelp(cfg.Keys.Up, "up")),
+		),
+		Down: key.NewBinding(
+			key.WithKeys(cfg.Keys.Down...),
+			key.WithHelp(formatHelp(cfg.Keys.Down, "down")),
+		),
+		Left: key.NewBinding(
+			key.WithKeys(cfg.Keys.Left...),
+			key.WithHelp(formatHelp(cfg.Keys.Left, "prev day")),
+		),
+		Right: key.NewBinding(
+			key.WithKeys(cfg.Keys.Right...),
+			key.WithHelp(formatHelp(cfg.Keys.Right, "next day")),
+		),
+		New: key.NewBinding(
+			key.WithKeys(cfg.Keys.New...),
+			key.WithHelp(formatHelp(cfg.Keys.New, "new todo")),
+		),
+		Edit: key.NewBinding(
+			key.WithKeys(cfg.Keys.Edit...),
+			key.WithHelp(formatHelp(cfg.Keys.Edit, "edit todo")),
+		),
+		Delete: key.NewBinding(
+			key.WithKeys(cfg.Keys.Delete...),
+			key.WithHelp(formatHelp(cfg.Keys.Delete, "delete")),
+		),
+		Toggle: key.NewBinding(
+			key.WithKeys(cfg.Keys.Toggle...),
+			key.WithHelp(formatHelp(cfg.Keys.Toggle, "toggle")),
+		),
+		Indent: key.NewBinding(
+			key.WithKeys(cfg.Keys.Indent...),
+			key.WithHelp(formatHelp(cfg.Keys.Indent, "indent")),
+		),
+		Outdent: key.NewBinding(
+			key.WithKeys(cfg.Keys.Outdent...),
+			key.WithHelp(formatHelp(cfg.Keys.Outdent, "outdent")),
+		),
+		Help: key.NewBinding(
+			key.WithKeys(cfg.Keys.Help...),
+			key.WithHelp(formatHelp(cfg.Keys.Help, "toggle help")),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys(cfg.Keys.Quit...),
+			key.WithHelp(formatHelp(cfg.Keys.Quit, "quit")),
+		),
+		Save: key.NewBinding(
+			key.WithKeys(cfg.Keys.Save...),
+			key.WithHelp(formatHelp(cfg.Keys.Save, "save")),
+		),
+		Cancel: key.NewBinding(
+			key.WithKeys(cfg.Keys.Cancel...),
+			key.WithHelp(formatHelp(cfg.Keys.Cancel, "cancel")),
+		),
+		Today: key.NewBinding(
+			key.WithKeys(cfg.Keys.Today...),
+			key.WithHelp(formatHelp(cfg.Keys.Today, "go to today")),
+		),
+		Calendar: key.NewBinding(
+			key.WithKeys(cfg.Keys.Calendar...),
+			key.WithHelp(formatHelp(cfg.Keys.Calendar, "calendar")),
+		),
+		PrevView: key.NewBinding(
+			key.WithKeys(cfg.Keys.PrevView...),
+			key.WithHelp(formatHelp(cfg.Keys.PrevView, "daily view")),
+		),
+		NextView: key.NewBinding(
+			key.WithKeys(cfg.Keys.NextView...),
+			key.WithHelp(formatHelp(cfg.Keys.NextView, "weekly view")),
+		),
+	}
+	Keys = k // Update global keys for fallback or direct access if needed
+	return k
+}
+
+func formatHelp(keys []string, desc string) (string, string) {
+	if len(keys) == 0 {
+		return "", desc
+	}
+	return keys[0], desc
 }

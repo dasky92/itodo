@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -24,6 +27,14 @@ var DB *gorm.DB
 
 // InitDB initializes the SQLite database
 func InitDB(dbPath string) error {
+	// Ensure directory exists
+	dir := filepath.Dir(dbPath)
+	if dir != "." && dir != ".." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create database directory: %w", err)
+		}
+	}
+
 	var err error
 	DB, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {

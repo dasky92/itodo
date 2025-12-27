@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"itodo/internal/config"
 	"itodo/internal/model"
 	"itodo/internal/service"
 	"itodo/internal/tui"
@@ -12,8 +13,14 @@ import (
 )
 
 func main() {
+	// Load Configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		fmt.Printf("Warning: Failed to load config: %v\nUsing defaults.\n", err)
+	}
+
 	// Initialize Database
-	if err := model.InitDB("itodo.db"); err != nil {
+	if err := model.InitDB(cfg.General.DBPath); err != nil {
 		fmt.Printf("Failed to initialize database: %v\n", err)
 		os.Exit(1)
 	}
@@ -22,7 +29,7 @@ func main() {
 	svc := service.NewTodoService()
 
 	// Initialize TUI
-	p := tea.NewProgram(tui.NewModel(svc), tea.WithAltScreen())
+	p := tea.NewProgram(tui.NewModel(svc, cfg), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
