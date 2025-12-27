@@ -99,8 +99,8 @@ var Keys = KeyMap{
 		key.WithHelp("space", "go to today"),
 	),
 	Calendar: key.NewBinding(
-		key.WithKeys("c"),
-		key.WithHelp("c", "calendar"),
+		key.WithKeys(";"),
+		key.WithHelp(";", "calendar"),
 	),
 	PrevView: key.NewBinding(
 		key.WithKeys("H"),

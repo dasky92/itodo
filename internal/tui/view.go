@@ -54,16 +54,15 @@ func (m Model) View() string {
 	var leftView, centerView string
 
 	if m.viewType == DailyView {
-		formattedDate := m.svc.FormatDateForDisplay(m.selectedDate)
-		leftView = dateStyle.Render(fmt.Sprintf("📅 %s", formattedDate))
-		centerView = titleStyle.Render("Daily Tasks")
+		leftView = dateStyle.Render(m.selectedDate)
+		t, _ := time.Parse("2006-01-02", m.selectedDate)
+		centerView = titleStyle.Render(t.Weekday().String())
 	} else {
 		// Weekly View
 		t, _ := time.Parse("2006-01-02", m.weeklyStart)
 		_, week := t.ISOWeek()
-		dateRange := fmt.Sprintf("Week %d: %s - %s", week, m.weeklyStart, m.weeklyEnd)
-		leftView = dateStyle.Render(dateRange)
-		centerView = titleStyle.Render(t.Month().String())
+		leftView = dateStyle.Render(fmt.Sprintf("%s - %s", m.weeklyStart, m.weeklyEnd))
+		centerView = titleStyle.Render(fmt.Sprintf("Week %d", week))
 	}
 
 	// Right: Progress Bar + Total Count
