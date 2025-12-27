@@ -15,9 +15,9 @@ func setupTestDB(t *testing.T) {
 func TestTodoService_Add(t *testing.T) {
 	setupTestDB(t)
 	svc := NewTodoService()
-	date := "2023-10-01"
+	date := svc.GetCurrentDate()
 
-	msg, err := svc.Add("Test Todo", date)
+	msg, err := svc.Add("Test Todo", "", date)
 	if err != nil {
 		t.Errorf("Add failed: %v", err)
 	}
@@ -40,14 +40,14 @@ func TestTodoService_Add(t *testing.T) {
 func TestTodoService_Toggle(t *testing.T) {
 	setupTestDB(t)
 	svc := NewTodoService()
-	date := "2023-10-01"
+	date := svc.GetCurrentDate()
 
-	svc.Add("Test Todo", date)
+	svc.Add("Test Todo", "", date)
 	todos, _ := svc.List(date)
 	id := todos[0].ID
 
 	// Toggle to completed
-	msg, err := svc.Toggle(id)
+	msg, err := svc.Toggle(date, id)
 	if err != nil {
 		t.Errorf("Toggle failed: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestTodoService_Toggle(t *testing.T) {
 	}
 
 	// Toggle back to pending
-	svc.Toggle(id)
+	svc.Toggle(date, id)
 	todos, _ = svc.List(date)
 	if todos[0].IsCompleted {
 		t.Error("Todo should be pending")
@@ -72,13 +72,13 @@ func TestTodoService_Toggle(t *testing.T) {
 func TestTodoService_Delete(t *testing.T) {
 	setupTestDB(t)
 	svc := NewTodoService()
-	date := "2023-10-01"
+	date := svc.GetCurrentDate()
 
-	svc.Add("To Delete", date)
+	svc.Add("To Delete", "", date)
 	todos, _ := svc.List(date)
 	id := todos[0].ID
 
-	msg, err := svc.Delete(id)
+	msg, err := svc.Delete(date, id)
 	if err != nil {
 		t.Errorf("Delete failed: %v", err)
 	}
@@ -95,13 +95,13 @@ func TestTodoService_Delete(t *testing.T) {
 func TestTodoService_Edit(t *testing.T) {
 	setupTestDB(t)
 	svc := NewTodoService()
-	date := "2023-10-01"
+	date := svc.GetCurrentDate()
 
-	svc.Add("Old Title", date)
+	svc.Add("Old Title", "", date)
 	todos, _ := svc.List(date)
 	id := todos[0].ID
 
-	msg, err := svc.Edit(id, "New Title")
+	msg, err := svc.Edit(date, id, "New Title", "New Description")
 	if err != nil {
 		t.Errorf("Edit failed: %v", err)
 	}
@@ -113,18 +113,21 @@ func TestTodoService_Edit(t *testing.T) {
 	if todos[0].Title != "New Title" {
 		t.Errorf("Expected 'New Title', got '%s'", todos[0].Title)
 	}
+	if todos[0].Description != "New Description" {
+		t.Errorf("Expected 'New Description', got '%s'", todos[0].Description)
+	}
 }
 
 func TestTodoService_GetStats(t *testing.T) {
 	setupTestDB(t)
 	svc := NewTodoService()
-	date := "2023-10-01"
+	date := svc.GetCurrentDate()
 
-	svc.Add("Todo 1", date)
-	svc.Add("Todo 2", date)
+	svc.Add("Todo 1", "", date)
+	svc.Add("Todo 2", "", date)
 
 	todos, _ := svc.List(date)
-	svc.Toggle(todos[0].ID) // Complete one
+	svc.Toggle(date, todos[0].ID) // Complete one
 
 	completed, pending, err := svc.GetStats(date)
 	if err != nil {
