@@ -297,7 +297,7 @@ func (m Model) View() string {
 					}
 
 					headerText := fmt.Sprintf("%s %s %s %d/%d", indicator, item.Date, bar, c, total)
-					line = lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true).Render(headerText)
+					line = lipgloss.NewStyle().Foreground(CurrentTheme.Pink).Bold(true).Render(headerText)
 				} else {
 					// Task Item
 					icon := "○"
@@ -344,9 +344,9 @@ func (m Model) View() string {
 				// Override line rendering to be cleaner
 				if item.Type == WeeklyHeader {
 					// Re-render header to be clean
-					baseStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
+					baseStyle := lipgloss.NewStyle().Foreground(CurrentTheme.Pink).Bold(true)
 					if m.cursor == i {
-						baseStyle = baseStyle.Background(lipgloss.Color("#313244")) // Highlight background
+						baseStyle = baseStyle.Background(CurrentTheme.Highlight) // Highlight background
 					}
 					line = baseStyle.Render(fmt.Sprintf("%s %s", cursorStr, item.Date)) // Simplified for now, let's restore content
 
@@ -398,7 +398,7 @@ func (m Model) View() string {
 					}
 
 					if m.cursor == i {
-						style = style.Background(lipgloss.Color("#313244")) // Highlight background
+						style = style.Background(CurrentTheme.Highlight) // Highlight background
 					}
 
 					line = style.Render(cursorStr + taskContent)

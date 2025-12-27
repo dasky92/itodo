@@ -109,6 +109,10 @@ func NewModel(svc *service.TodoService) Model {
 		keys:           Keys,
 		logs:           []string{},
 	}
+
+	// Initialize default theme
+	InitStyles(Themes["Monokai"])
+
 	m.refreshData()
 	return m
 }
