@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,6 +21,46 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch m.mode {
+		case CalendarMode:
+			switch {
+			case key.Matches(msg, m.keys.Cancel): // Esc
+				m.mode = Normal
+
+			case key.Matches(msg, m.keys.Toggle): // Enter (Select)
+				m.selectedDate = m.calendarCursor.Format("2006-01-02")
+				m.mode = Normal
+				m.refreshData()
+
+			case key.Matches(msg, m.keys.Today): // Space (Go to Today)
+				now := time.Now()
+				m.calendarCursor = now
+				m.calendarViewDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+			case key.Matches(msg, m.keys.Left):
+				m.calendarCursor = m.calendarCursor.AddDate(0, 0, -1)
+				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
+					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+				}
+
+			case key.Matches(msg, m.keys.Right):
+				m.calendarCursor = m.calendarCursor.AddDate(0, 0, 1)
+				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
+					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+				}
+
+			case key.Matches(msg, m.keys.Up):
+				m.calendarCursor = m.calendarCursor.AddDate(0, 0, -7)
+				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
+					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+				}
+
+			case key.Matches(msg, m.keys.Down):
+				m.calendarCursor = m.calendarCursor.AddDate(0, 0, 7)
+				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
+					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+				}
+			}
+
 		case Normal:
 			switch {
 			case key.Matches(msg, m.keys.Quit):
@@ -119,6 +161,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.refreshData()
 					}
 				}
+
+			case key.Matches(msg, m.keys.Today):
+				m.selectedDate = m.svc.GetCurrentDate()
+				m.refreshData()
+
+			case key.Matches(msg, m.keys.Calendar):
+				m.mode = CalendarMode
+				t, err := time.Parse("2006-01-02", m.selectedDate)
+				if err != nil {
+					t = time.Now()
+				}
+				m.calendarCursor = t
+				m.calendarViewDate = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
 
 			case key.Matches(msg, m.keys.Help):
 				m.mode = Helping

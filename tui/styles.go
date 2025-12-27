@@ -84,4 +84,39 @@ var (
 			Foreground(colBlue).
 			Bold(true).
 			MarginTop(1)
+
+	// Calendar
+	calendarStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(colMauve).
+			Padding(1, 2)
+
+	monthTitleStyle = lipgloss.NewStyle().
+			Foreground(colBlue).
+			Bold(true).
+			Align(lipgloss.Center).
+			Width(28)
+
+	weekdayStyle = lipgloss.NewStyle().
+			Foreground(colGray).
+			Width(4).
+			Align(lipgloss.Center)
+
+	dayStyle = lipgloss.NewStyle().
+			Foreground(colText).
+			Width(4).
+			Align(lipgloss.Center)
+
+	selectedDayStyle = lipgloss.NewStyle().
+				Foreground(colBase).
+				Background(colPink).
+				Bold(true).
+				Width(4).
+				Align(lipgloss.Center)
+
+	todayStyle = lipgloss.NewStyle().
+			Foreground(colGreen).
+			Bold(true).
+			Width(4).
+			Align(lipgloss.Center)
 )

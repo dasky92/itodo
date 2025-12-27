@@ -4,6 +4,8 @@ import (
 	"itodo/model"
 	"itodo/service"
 
+	"time"
+
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -17,6 +19,7 @@ const (
 	Adding
 	Editing
 	Helping
+	CalendarMode
 )
 
 type Model struct {
@@ -25,6 +28,10 @@ type Model struct {
 	cursor       int
 	selectedDate string
 	mode         Mode
+
+	// Calendar State
+	calendarCursor   time.Time
+	calendarViewDate time.Time // Month being viewed
 
 	// Form Inputs
 	titleInput textinput.Model

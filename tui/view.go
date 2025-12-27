@@ -3,11 +3,16 @@ package tui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) View() string {
+	if m.mode == CalendarMode {
+		return m.calendarView()
+	}
+
 	// 1. Form View (Adding/Editing) - Full Screen
 	if m.mode == Adding || m.mode == Editing {
 		title := "Create New Task"
@@ -239,6 +244,87 @@ func (m Model) View() string {
 			listView,
 			divider,
 			footerView,
+		),
+	)
+}
+
+func (m Model) calendarView() string {
+	t := m.calendarViewDate
+	month := t.Month().String()
+	year := t.Year()
+	title := fmt.Sprintf("%s %d", month, year)
+
+	header := monthTitleStyle.Render(title)
+
+	// Weekdays
+	weekdays := []string{"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"}
+	var weekdayViews []string
+	for _, w := range weekdays {
+		weekdayViews = append(weekdayViews, weekdayStyle.Render(w))
+	}
+	headerRow := lipgloss.JoinHorizontal(lipgloss.Center, weekdayViews...)
+
+	// Days
+	firstDay := time.Date(year, t.Month(), 1, 0, 0, 0, 0, t.Location())
+	startWeekday := int(firstDay.Weekday()) // 0=Sun
+	daysInMonth := time.Date(year, t.Month()+1, 0, 0, 0, 0, 0, t.Location()).Day()
+
+	var rows []string
+	var currentRow []string
+
+	// Padding for first row
+	for i := 0; i < startWeekday; i++ {
+		currentRow = append(currentRow, dayStyle.Render(" "))
+	}
+
+	for d := 1; d <= daysInMonth; d++ {
+		date := time.Date(year, t.Month(), d, 0, 0, 0, 0, t.Location())
+		dateStr := fmt.Sprintf("%d", d)
+
+		var style lipgloss.Style
+
+		isCursor := date.Year() == m.calendarCursor.Year() && date.Month() == m.calendarCursor.Month() && date.Day() == m.calendarCursor.Day()
+		isToday := date.Year() == time.Now().Year() && date.Month() == time.Now().Month() && date.Day() == time.Now().Day()
+
+		if isCursor {
+			style = selectedDayStyle
+		} else if isToday {
+			style = todayStyle
+		} else {
+			style = dayStyle
+		}
+
+		currentRow = append(currentRow, style.Render(dateStr))
+
+		if len(currentRow) == 7 {
+			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Center, currentRow...))
+			currentRow = []string{}
+		}
+	}
+
+	// Fill last row
+	if len(currentRow) > 0 {
+		for len(currentRow) < 7 {
+			currentRow = append(currentRow, dayStyle.Render(" "))
+		}
+		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Center, currentRow...))
+	}
+
+	calendarBody := lipgloss.JoinVertical(lipgloss.Center, rows...)
+
+	cal := lipgloss.JoinVertical(lipgloss.Center, header, headerRow, calendarBody)
+
+	// Footer instructions
+	footer := statusStyle.Render("Arrows: Move • Space: Today • Enter: Select • Esc: Cancel")
+
+	// Center the calendar in the screen
+	// Use m.width and m.height for placing
+	content := lipgloss.JoinVertical(lipgloss.Center, calendarStyle.Render(cal), footer)
+
+	return appStyle.Render(
+		lipgloss.Place(m.width-10, m.height-5,
+			lipgloss.Center, lipgloss.Center,
+			content,
 		),
 	)
 }

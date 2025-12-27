@@ -17,10 +17,12 @@ type KeyMap struct {
 	Quit    key.Binding
 	Save    key.Binding // New
 	Cancel  key.Binding // New
+	Today   key.Binding // New: Go to Today
+	Calendar key.Binding // New: Open Calendar
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
+	return []key.Binding{k.Help, k.Quit, k.Calendar}
 }
 
 func (k KeyMap) FullHelp() [][]key.Binding {
@@ -28,7 +30,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.Up, k.Down, k.Left, k.Right},
 		{k.New, k.Edit, k.Delete, k.Toggle},
 		{k.Indent, k.Outdent, k.Help, k.Quit},
-		{k.Save, k.Cancel},
+		{k.Save, k.Cancel, k.Today, k.Calendar},
 	}
 }
 
@@ -62,8 +64,8 @@ var Keys = KeyMap{
 		key.WithHelp("d", "delete"),
 	),
 	Toggle: key.NewBinding(
-		key.WithKeys(" "),
-		key.WithHelp("space", "toggle status"),
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "toggle status"),
 	),
 	Indent: key.NewBinding(
 		key.WithKeys(">", "."),
@@ -88,5 +90,13 @@ var Keys = KeyMap{
 	Cancel: key.NewBinding(
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "cancel"),
+	),
+	Today: key.NewBinding(
+		key.WithKeys(" "),
+		key.WithHelp("space", "go to today"),
+	),
+	Calendar: key.NewBinding(
+		key.WithKeys("c"),
+		key.WithHelp("c", "calendar"),
 	),
 }
