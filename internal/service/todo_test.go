@@ -1,7 +1,7 @@
 package service
 
 import (
-	"itodo/model"
+	"itodo/internal/model"
 	"testing"
 )
 

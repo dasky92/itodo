@@ -1,8 +1,8 @@
 package tui
 
 import (
-	"itodo/model"
-	"itodo/service"
+	"itodo/internal/model"
+	"itodo/internal/service"
 
 	"time"
 

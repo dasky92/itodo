@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"itodo/model"
-	"itodo/service"
-	"itodo/tui"
+	"itodo/internal/model"
+	"itodo/internal/service"
+	"itodo/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
