@@ -55,7 +55,6 @@ var (
 
 	completedItemStyle = lipgloss.NewStyle().
 				Foreground(colGray).
-				Strikethrough(true).
 				PaddingLeft(2).
 				MarginBottom(1) // Add breathing room
 

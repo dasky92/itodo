@@ -3,26 +3,28 @@ package tui
 import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
-	Up      key.Binding
-	Down    key.Binding
-	Left    key.Binding
-	Right   key.Binding
-	New     key.Binding
-	Edit    key.Binding
-	Delete  key.Binding
-	Toggle  key.Binding
-	Indent  key.Binding
-	Outdent key.Binding
-	Help    key.Binding
-	Quit    key.Binding
-	Save    key.Binding // New
-	Cancel  key.Binding // New
-	Today   key.Binding // New: Go to Today
+	Up       key.Binding
+	Down     key.Binding
+	Left     key.Binding
+	Right    key.Binding
+	New      key.Binding
+	Edit     key.Binding
+	Delete   key.Binding
+	Toggle   key.Binding
+	Indent   key.Binding
+	Outdent  key.Binding
+	Help     key.Binding
+	Quit     key.Binding
+	Save     key.Binding // New
+	Cancel   key.Binding // New
+	Today    key.Binding // New: Go to Today
 	Calendar key.Binding // New: Open Calendar
+	PrevView key.Binding // New: Switch to Daily
+	NextView key.Binding // New: Switch to Weekly
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit, k.Calendar}
+	return []key.Binding{k.Help, k.Quit, k.Calendar, k.PrevView, k.NextView}
 }
 
 func (k KeyMap) FullHelp() [][]key.Binding {
@@ -31,6 +33,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.New, k.Edit, k.Delete, k.Toggle},
 		{k.Indent, k.Outdent, k.Help, k.Quit},
 		{k.Save, k.Cancel, k.Today, k.Calendar},
+		{k.PrevView, k.NextView},
 	}
 }
 
@@ -64,8 +67,8 @@ var Keys = KeyMap{
 		key.WithHelp("d", "delete"),
 	),
 	Toggle: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "toggle status"),
+		key.WithKeys("enter", "tab"),
+		key.WithHelp("enter", "toggle"),
 	),
 	Indent: key.NewBinding(
 		key.WithKeys(">", "."),
@@ -98,5 +101,13 @@ var Keys = KeyMap{
 	Calendar: key.NewBinding(
 		key.WithKeys("c"),
 		key.WithHelp("c", "calendar"),
+	),
+	PrevView: key.NewBinding(
+		key.WithKeys("H"),
+		key.WithHelp("H", "daily"),
+	),
+	NextView: key.NewBinding(
+		key.WithKeys("L"),
+		key.WithHelp("L", "weekly"),
 	),
 }

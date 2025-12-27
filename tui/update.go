@@ -66,25 +66,52 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.Quit):
 				return m, tea.Quit
 
+			case key.Matches(msg, m.keys.PrevView):
+				m.viewType = DailyView
+				m.cursor = 0
+				m.refreshData()
+
+			case key.Matches(msg, m.keys.NextView):
+				m.viewType = WeeklyView
+				m.cursor = 0
+				m.refreshData()
+
 			case key.Matches(msg, m.keys.Up):
 				if m.cursor > 0 {
 					m.cursor--
 				}
 
 			case key.Matches(msg, m.keys.Down):
-				if m.cursor < len(m.todos)-1 {
+				maxLen := len(m.todos)
+				if m.viewType == WeeklyView {
+					maxLen = len(m.weeklyViewItems)
+				}
+				if m.cursor < maxLen-1 {
 					m.cursor++
 				}
 
 			case key.Matches(msg, m.keys.Left):
-				m.selectedDate = m.svc.GetPrevDate(m.selectedDate)
+				if m.viewType == DailyView {
+					m.selectedDate = m.svc.GetPrevDate(m.selectedDate)
+				} else {
+					t, _ := time.Parse("2006-01-02", m.selectedDate)
+					m.selectedDate = t.AddDate(0, 0, -7).Format("2006-01-02")
+				}
 				m.refreshData()
 
 			case key.Matches(msg, m.keys.Right):
-				m.selectedDate = m.svc.GetNextDate(m.selectedDate)
+				if m.viewType == DailyView {
+					m.selectedDate = m.svc.GetNextDate(m.selectedDate)
+				} else {
+					t, _ := time.Parse("2006-01-02", m.selectedDate)
+					m.selectedDate = t.AddDate(0, 0, 7).Format("2006-01-02")
+				}
 				m.refreshData()
 
 			case key.Matches(msg, m.keys.New):
+				if m.viewType == WeeklyView {
+					return m, nil // Read-only
+				}
 				// Check if selected date is in the past
 				today := m.svc.GetCurrentDate()
 				if m.selectedDate < today {
@@ -101,6 +128,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, textinput.Blink
 
 			case key.Matches(msg, m.keys.Edit):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
 				if len(m.todos) > 0 {
 					m.mode = Editing
 					todo := m.todos[m.cursor]
@@ -114,6 +144,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 			case key.Matches(msg, m.keys.Delete):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
 					log, err := m.svc.Delete(m.selectedDate, todo.ID)
@@ -126,6 +159,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 			case key.Matches(msg, m.keys.Toggle):
+				if m.viewType == WeeklyView {
+					// Toggle Expansion if header
+					if len(m.weeklyViewItems) > 0 {
+						item := m.weeklyViewItems[m.cursor]
+						if item.Type == WeeklyHeader {
+							m.weeklyExpanded[item.Date] = !m.weeklyExpanded[item.Date]
+							m.buildWeeklyItems()
+						}
+					}
+					return m, nil
+				}
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
 					log, err := m.svc.Toggle(m.selectedDate, todo.ID)
@@ -138,6 +182,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 			case key.Matches(msg, m.keys.Indent):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
 				if len(m.todos) > 0 && m.cursor > 0 {
 					todo := m.todos[m.cursor]
 					prevTodo := m.todos[m.cursor-1]
@@ -151,6 +198,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 			case key.Matches(msg, m.keys.Outdent):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
 				if len(m.todos) > 0 {
 					todo := m.todos[m.cursor]
 					log, err := m.svc.OutdentTodo(m.selectedDate, todo.ID)

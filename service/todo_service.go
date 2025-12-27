@@ -88,6 +88,32 @@ func (s *TodoService) Edit(date string, id uint, newTitle string, newDescription
 	return fmt.Sprintf("Updated todo '%s'", oldTitle), nil
 }
 
+// GetWeekRange returns the start (Monday) and end (Sunday) dates for the week of the given date
+func (s *TodoService) GetWeekRange(dateStr string) (string, string, error) {
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Calculate offset to Monday (0 = Monday, ..., 6 = Sunday)
+	// time.Weekday: Sunday=0, Monday=1, ...
+	weekday := t.Weekday()
+	offset := int(weekday) - 1
+	if weekday == time.Sunday {
+		offset = 6
+	}
+
+	start := t.AddDate(0, 0, -offset)
+	end := start.AddDate(0, 0, 6)
+
+	return start.Format("2006-01-02"), end.Format("2006-01-02"), nil
+}
+
+// GetTasksByRange returns root todos within the given date range
+func (s *TodoService) GetTasksByRange(startDate, endDate string) ([]model.Todo, error) {
+	return model.GetRootTodosByDateRange(startDate, endDate)
+}
+
 // IndentTodo makes the current todo a child of the previous todo
 func (s *TodoService) IndentTodo(date string, currentID uint, prevID uint) (string, error) {
 	if prevID == 0 {

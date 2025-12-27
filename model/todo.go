@@ -66,7 +66,18 @@ func CreateTodo(title string, description string, date string) (*Todo, error) {
 	return todo, result.Error
 }
 
-// GetTodosByDate retrieves todos for a specific date with hierarchical sorting
+// GetRootTodosByDateRange retrieves root todos within a date range
+func GetRootTodosByDateRange(startDate, endDate string) ([]Todo, error) {
+	var todos []Todo
+	err := DB.Where("date >= ? AND date <= ? AND parent_id IS NULL", startDate, endDate).
+		Order("date ASC, is_completed ASC, id ASC").
+		Find(&todos).Error
+	if err != nil {
+		return nil, err
+	}
+	return todos, nil
+}
+
 func GetTodosByDate(date string) ([]Todo, error) {
 	var todos []Todo
 	// Fetch all todos for the date

@@ -51,14 +51,20 @@ func (m Model) View() string {
 	divider := dividerStyle.Render(strings.Repeat("┈", width))
 
 	// Header: Date + Title + Progress (3-Column Layout)
-	// Left: Date
-	formattedDate := m.svc.FormatDateForDisplay(m.selectedDate)
-	dateStr := fmt.Sprintf("📅 %s", formattedDate)
-	leftView := dateStyle.Render(dateStr)
+	var leftView, centerView string
 
-	// Center: Title
-	titleStr := "Daily Tasks"
-	centerView := titleStyle.Render(titleStr)
+	if m.viewType == DailyView {
+		formattedDate := m.svc.FormatDateForDisplay(m.selectedDate)
+		leftView = dateStyle.Render(fmt.Sprintf("📅 %s", formattedDate))
+		centerView = titleStyle.Render("Daily Tasks")
+	} else {
+		// Weekly View
+		t, _ := time.Parse("2006-01-02", m.weeklyStart)
+		_, week := t.ISOWeek()
+		dateRange := fmt.Sprintf("Week %d: %s - %s", week, m.weeklyStart, m.weeklyEnd)
+		leftView = dateStyle.Render(dateRange)
+		centerView = titleStyle.Render(t.Month().String())
+	}
 
 	// Right: Progress Bar + Total Count
 	total := m.completed + m.pending
@@ -178,63 +184,237 @@ func (m Model) View() string {
 		targetListHeight = 0
 	}
 
-	if len(m.todos) == 0 {
-		listView = statusStyle.Render("No todos for this day.")
-		// Fill remaining height
-		currentH := lipgloss.Height(listView)
-		if targetListHeight > currentH {
-			listView += strings.Repeat("\n", targetListHeight-currentH)
+	if m.viewType == DailyView {
+		if len(m.todos) == 0 {
+			listView = statusStyle.Render("No todos for this day.")
+			// Fill remaining height
+			currentH := lipgloss.Height(listView)
+			if targetListHeight > currentH {
+				listView += strings.Repeat("\n", targetListHeight-currentH)
+			}
+		} else {
+			var rows []string
+			for i, todo := range m.todos {
+				line := todo.Title
+
+				// Indent child tasks
+				prefix := ""
+				if todo.ParentID != nil {
+					prefix = "  "
+				}
+
+				// Icon selection
+				icon := "○"
+				if todo.IsCompleted {
+					icon = "✔"
+				}
+
+				// Render item
+				str := fmt.Sprintf("%s%s %s", prefix, icon, line)
+
+				var renderedRow string
+				if m.cursor == i {
+					// Selected
+					renderedRow = selectedItemStyle.Render(str)
+				} else {
+					// Not Selected
+					if todo.IsCompleted {
+						renderedRow = completedItemStyle.Render(str)
+					} else {
+						renderedRow = normalItemStyle.Render(str)
+					}
+				}
+				rows = append(rows, renderedRow)
+			}
+
+			// Join rows
+			content := lipgloss.JoinVertical(lipgloss.Left, rows...)
+
+			// Ensure fixed height using lipgloss.Place or manual padding
+			currentHeight := lipgloss.Height(content)
+			if currentHeight < targetListHeight {
+				diff := targetListHeight - currentHeight
+				content += strings.Repeat("\n", diff)
+			}
+
+			listView = content
 		}
 	} else {
-		var rows []string
-		for i, todo := range m.todos {
-			line := todo.Title
-
-			// Indent child tasks
-			prefix := ""
-			if todo.ParentID != nil {
-				prefix = "    "
+		// Weekly View
+		if len(m.weeklyViewItems) == 0 {
+			listView = statusStyle.Render("No todos for this week.")
+			currentH := lipgloss.Height(listView)
+			if targetListHeight > currentH {
+				listView += strings.Repeat("\n", targetListHeight-currentH)
 			}
-
-			// Icon selection
-			icon := "○"
-			if todo.IsCompleted {
-				icon = "✔"
-			}
-
-			// Render item
-			str := fmt.Sprintf("%s%s %s", prefix, icon, line)
-
-			var renderedRow string
-			if m.cursor == i {
-				// Selected
-				if todo.IsCompleted {
-					renderedRow = selectedItemStyle.Copy().Strikethrough(true).Render(str)
+		} else {
+			// Calculate visible range based on cursor and height
+			start, end := 0, len(m.weeklyViewItems)
+			if len(m.weeklyViewItems) > targetListHeight {
+				half := targetListHeight / 2
+				if m.cursor < half {
+					start = 0
+					end = targetListHeight
+				} else if m.cursor >= len(m.weeklyViewItems)-half {
+					start = len(m.weeklyViewItems) - targetListHeight
+					end = len(m.weeklyViewItems)
 				} else {
-					renderedRow = selectedItemStyle.Render(str)
-				}
-			} else {
-				// Not Selected
-				if todo.IsCompleted {
-					renderedRow = completedItemStyle.Render(str)
-				} else {
-					renderedRow = normalItemStyle.Render(str)
+					start = m.cursor - half
+					end = start + targetListHeight
 				}
 			}
-			rows = append(rows, renderedRow)
+
+			var rows []string
+			for i := start; i < end; i++ {
+				item := m.weeklyViewItems[i]
+				var line string
+
+				if item.Type == WeeklyHeader {
+					// Date Header with Progress
+					dateTodos := m.weeklyTodos[item.Date]
+					c, p := 0, 0
+					for _, t := range dateTodos {
+						if t.IsCompleted {
+							c++
+						} else {
+							p++
+						}
+					}
+					total := c + p
+					percent := 0.0
+					if total > 0 {
+						percent = float64(c) / float64(total)
+					}
+
+					bw := 5
+					f := int(percent * float64(bw))
+					e := bw - f
+					bar := "[" + strings.Repeat("=", f) + strings.Repeat("-", e) + "]"
+
+					// Add expansion indicator
+					indicator := "▶"
+					if m.weeklyExpanded[item.Date] {
+						indicator = "▼"
+					}
+
+					headerText := fmt.Sprintf("%s %s %s %d/%d", indicator, item.Date, bar, c, total)
+					line = lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true).Render(headerText)
+				} else {
+					// Task Item
+					icon := "○"
+					if item.Todo.IsCompleted {
+						icon = "✔"
+					}
+					// Tree structure guide line
+					// Using └─ for visual hierarchy
+					taskText := fmt.Sprintf("  └─ %s %s", icon, item.Todo.Title)
+
+					if item.Todo.IsCompleted {
+						line = completedItemStyle.Copy().MarginBottom(0).Render(taskText)
+					} else {
+						line = normalItemStyle.Copy().MarginBottom(0).Render(taskText)
+					}
+				}
+
+				// Apply Cursor Selection with Fixed Width Prefix to avoid Jitter
+				// prefix := "  " // Default 2 spaces
+				if m.cursor == i {
+					// prefix = "> " // Selected 2 chars
+					// Highlight line logic if needed, but prefix is enough for now
+					// To fix jitter, ensure prefix is prepended OUTSIDE the styled render or consistently
+
+					// Re-render line with selection style if needed, OR just prepend prefix
+					// For simple fix:
+					line = selectedItemStyle.Copy().MarginBottom(0).Render(line)
+				} else {
+					// Unselected
+					line = lipgloss.NewStyle().PaddingLeft(1).Render(line) // Match padding of selectedItemStyle
+				}
+
+				// Construct final row: Prefix + Line
+				// Note: selectedItemStyle has PaddingLeft(1) and Border left.
+				// We need to match visual width.
+
+				// Let's simplify:
+				// Use a dedicated cursor column.
+				cursorStr := "  "
+				if m.cursor == i {
+					cursorStr = "> "
+				}
+
+				// Override line rendering to be cleaner
+				if item.Type == WeeklyHeader {
+					// Re-render header to be clean
+					baseStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")).Bold(true)
+					if m.cursor == i {
+						baseStyle = baseStyle.Background(lipgloss.Color("#313244")) // Highlight background
+					}
+					line = baseStyle.Render(fmt.Sprintf("%s %s", cursorStr, item.Date)) // Simplified for now, let's restore content
+
+					// Restore content logic
+					dateTodos := m.weeklyTodos[item.Date]
+					c, p := 0, 0
+					for _, t := range dateTodos {
+						if t.IsCompleted {
+							c++
+						} else {
+							p++
+						}
+					}
+					total := c + p
+					percent := 0.0
+					if total > 0 {
+						percent = float64(c) / float64(total)
+					}
+					bw := 5
+					f := int(percent * float64(bw))
+					e := bw - f
+					bar := "[" + strings.Repeat("=", f) + strings.Repeat("-", e) + "]"
+					indicator := "▶"
+					if m.weeklyExpanded[item.Date] {
+						indicator = "▼"
+					}
+
+					content := fmt.Sprintf("%s %s %s %d/%d", indicator, item.Date, bar, c, total)
+					line = baseStyle.Render(cursorStr + content)
+
+				} else {
+					// Task Item
+					icon := "○"
+					if item.Todo.IsCompleted {
+						icon = "✔"
+					}
+
+					// Indent task more: cursor(2) + indent(4) + tree(3) = 9 chars total prefix?
+					// cursorStr is 2 chars.
+					// We want task to be indented relative to header.
+					// Header: "> ▼ 2023-..."
+					// Task:   "      └─ ○ Title"
+
+					taskContent := fmt.Sprintf("      └─ %s %s", icon, item.Todo.Title)
+
+					style := normalItemStyle.Copy().MarginBottom(0).PaddingLeft(0)
+					if item.Todo.IsCompleted {
+						style = completedItemStyle.Copy().MarginBottom(0).PaddingLeft(0)
+					}
+
+					if m.cursor == i {
+						style = style.Background(lipgloss.Color("#313244")) // Highlight background
+					}
+
+					line = style.Render(cursorStr + taskContent)
+				}
+				rows = append(rows, line)
+			}
+			content := lipgloss.JoinVertical(lipgloss.Left, rows...)
+			// Fill empty space
+			currentHeight := lipgloss.Height(content)
+			if currentHeight < targetListHeight {
+				diff := targetListHeight - currentHeight
+				content += strings.Repeat("\n", diff)
+			}
+			listView = content
 		}
-
-		// Join rows
-		content := lipgloss.JoinVertical(lipgloss.Left, rows...)
-
-		// Ensure fixed height using lipgloss.Place or manual padding
-		currentHeight := lipgloss.Height(content)
-		if currentHeight < targetListHeight {
-			diff := targetListHeight - currentHeight
-			content += strings.Repeat("\n", diff)
-		}
-
-		listView = content
 	}
 
 	return appStyle.Render(
