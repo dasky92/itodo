@@ -46,8 +46,11 @@ case $ARCH in
     x86_64)
         ARCH_TYPE="x86_64"
         ;;
-    aarch64|arm64)
+    aarch64)
         ARCH_TYPE="aarch64"
+        ;;
+    arm64)
+        ARCH_TYPE="arm64"
         ;;
     *)
         error "Unsupported architecture: $ARCH"
@@ -81,8 +84,8 @@ VERSION=${TAG#v}
 log "Latest version: $TAG"
 
 # Construct asset name
-# Matches release workflow format: itodo-OS-ARCH.tar.gz
-ASSET_NAME="itodo-${OS_TYPE}-${ARCH_TYPE}.tar.gz"
+# Matches release workflow format: itodo-OS-ARCH
+ASSET_NAME="itodo-${OS_TYPE}-${ARCH_TYPE}"
 DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/$ASSET_NAME"
 
 TEMP_DIR=$(mktemp -d)
@@ -95,9 +98,6 @@ HTTP_STATUS=$(curl -sL -w "%{http_code}" -o "$TEMP_DIR/$ASSET_NAME" "$DOWNLOAD_U
 if [ "$HTTP_STATUS" -ne 200 ]; then
     error "Download failed with status $HTTP_STATUS. URL: $DOWNLOAD_URL"
 fi
-
-log "Extracting..."
-tar -xzf "$TEMP_DIR/$ASSET_NAME" -C "$TEMP_DIR"
 
 # Determine install directory
 INSTALL_DIR="/usr/local/bin"
@@ -112,15 +112,8 @@ if [ ! -w "$INSTALL_DIR" ]; then
     fi
 fi
 
-# Find the binary in the extracted files (handle potential subdirectories)
-EXTRACTED_BIN=$(find "$TEMP_DIR" -type f -name "$BINARY_NAME" | head -n 1)
-
-if [ -z "$EXTRACTED_BIN" ]; then
-    error "Binary '$BINARY_NAME' not found in the downloaded archive."
-fi
-
 log "Installing $BINARY_NAME to $INSTALL_DIR..."
-$USE_SUDO mv "$EXTRACTED_BIN" "$INSTALL_DIR/$BINARY_NAME"
+$USE_SUDO mv "$TEMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$BINARY_NAME"
 $USE_SUDO chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
 success "$BINARY_NAME installed successfully to $INSTALL_DIR/$BINARY_NAME"

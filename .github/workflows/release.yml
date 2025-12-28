@@ -48,26 +48,13 @@ jobs:
             ARCH_NAME="aarch64"
           fi
 
-          # Build with standard name "itodo" (or itodo.exe)
-          OUTPUT_NAME="itodo"
+          # Build binary with full name (no compression as per user request)
+          OUTPUT_NAME="itodo-${{ matrix.goos }}-${ARCH_NAME}"
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            OUTPUT_NAME="itodo.exe"
+            OUTPUT_NAME="${OUTPUT_NAME}.exe"
           fi
           
           go build -o "$OUTPUT_NAME" .
-          
-          # Compress binary for all platforms
-          # The archive name includes OS/Arch, but the binary inside is standard "itodo"
-          ASSET_NAME="itodo-${{ matrix.goos }}-${ARCH_NAME}"
-          
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip "${ASSET_NAME}.zip" "$OUTPUT_NAME"
-          else
-            tar -czf "${ASSET_NAME}.tar.gz" "$OUTPUT_NAME"
-          fi
-          
-          # Clean up binary to save space (optional)
-          rm "$OUTPUT_NAME"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -92,6 +79,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            *.zip
-            *.tar.gz
+            itodo-*
           generate_release_notes: true
