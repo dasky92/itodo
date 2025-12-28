@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 type GeneralConfig struct {
@@ -98,12 +99,22 @@ func DefaultConfig() *Config {
 func LoadConfig() (*Config, error) {
 	cfg := DefaultConfig()
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return cfg, err // Return default if can't get home dir
+	var configDir string
+	if runtime.GOOS == "windows" {
+		ucd, err := os.UserConfigDir()
+		if err == nil {
+			configDir = filepath.Join(ucd, "itodo")
+		}
 	}
 
-	configDir := filepath.Join(home, ".config", "itodo")
+	if configDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return cfg, err // Return default if can't get home dir
+		}
+		configDir = filepath.Join(home, ".config", "itodo")
+	}
+
 	configPath := filepath.Join(configDir, "config.json")
 
 	// Ensure config directory exists and create example config

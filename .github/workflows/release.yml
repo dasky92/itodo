@@ -40,7 +40,16 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          BINARY_NAME=itodo-${{ matrix.goos }}-${{ matrix.goarch }}
+          # Map Go architecture names to common system names
+          ARCH_NAME="${{ matrix.goarch }}"
+          if [ "$ARCH_NAME" = "amd64" ]; then
+            ARCH_NAME="x86_64"
+          elif [ "$ARCH_NAME" = "arm64" ] && [ "${{ matrix.goos }}" = "linux" ]; then
+            ARCH_NAME="aarch64"
+          fi
+
+          BINARY_NAME=itodo-${{ matrix.goos }}-${ARCH_NAME}
+          
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
           fi

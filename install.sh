@@ -47,7 +47,7 @@ case $ARCH in
         ARCH_TYPE="x86_64"
         ;;
     aarch64|arm64)
-        ARCH_TYPE="arm64"
+        ARCH_TYPE="aarch64"
         ;;
     *)
         error "Unsupported architecture: $ARCH"
