@@ -32,10 +32,10 @@ ARCH=$(uname -m)
 
 case $OS in
     Linux)
-        OS_TYPE="Linux"
+        OS_TYPE="linux"
         ;;
     Darwin)
-        OS_TYPE="Darwin"
+        OS_TYPE="darwin"
         ;;
     *)
         error "Unsupported operating system: $OS"
