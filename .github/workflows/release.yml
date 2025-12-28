@@ -59,7 +59,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: itodo-${{ matrix.goos }}-${ARCH_NAME}
+          name: itodo-${{ matrix.goos }}-${{ matrix.goarch }}
           path: itodo-*
           if-no-files-found: error
 
