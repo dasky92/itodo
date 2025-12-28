@@ -48,12 +48,22 @@ jobs:
             ARCH_NAME="aarch64"
           fi
 
-          BINARY_NAME=itodo-${{ matrix.goos }}-${ARCH_NAME}
+          BINARY_NAME="itodo-${{ matrix.goos }}-${ARCH_NAME}"
           
           if [ "${{ matrix.goos }}" = "windows" ]; then
             BINARY_NAME="${BINARY_NAME}.exe"
           fi
+          
           go build -o "$BINARY_NAME" .
+          
+          # Compress binary for all platforms
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            zip "${BINARY_NAME%.exe}.zip" "$BINARY_NAME"
+            rm "$BINARY_NAME"
+          else
+            tar -czf "${BINARY_NAME}.tar.gz" "$BINARY_NAME"
+            rm "$BINARY_NAME"
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

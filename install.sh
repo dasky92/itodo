@@ -81,8 +81,8 @@ VERSION=${TAG#v}
 log "Latest version: $TAG"
 
 # Construct asset name
-# Assuming GoReleaser default format: ProjectName_Version_Os_Arch.tar.gz
-ASSET_NAME="${BINARY_NAME}_${VERSION}_${OS_TYPE}_${ARCH_TYPE}.tar.gz"
+# Matches release workflow format: itodo-OS-ARCH.tar.gz
+ASSET_NAME="itodo-${OS_TYPE}-${ARCH_TYPE}.tar.gz"
 DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/$ASSET_NAME"
 
 TEMP_DIR=$(mktemp -d)
