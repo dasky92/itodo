@@ -27,14 +27,14 @@ success() {
 }
 
 # Detect OS and Arch
-OS=$(uname -s)
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
 case $OS in
-    Linux)
+    linux)
         OS_TYPE="linux"
         ;;
-    Darwin)
+    darwin)
         OS_TYPE="darwin"
         ;;
     *)
@@ -50,7 +50,13 @@ case $ARCH in
         ARCH_TYPE="aarch64"
         ;;
     arm64)
-        ARCH_TYPE="arm64"
+        # For Darwin arm64, we use arm64 as ARCH_NAME in release.yml
+        # but release.yml logic for linux arm64 maps it to aarch64
+        if [ "$OS_TYPE" = "linux" ]; then
+            ARCH_TYPE="aarch64"
+        else
+            ARCH_TYPE="arm64"
+        fi
         ;;
     *)
         error "Unsupported architecture: $ARCH"
