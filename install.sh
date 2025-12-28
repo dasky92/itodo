@@ -37,6 +37,9 @@ case $OS in
     darwin)
         OS_TYPE="darwin"
         ;;
+    msys*|mingw*|cygwin*)
+        OS_TYPE="windows"
+        ;;
     *)
         error "Unsupported operating system: $OS"
         ;;
@@ -90,8 +93,11 @@ VERSION=${TAG#v}
 log "Latest version: $TAG"
 
 # Construct asset name
-# Matches release workflow format: itodo-OS-ARCH
+# Matches release workflow format: itodo-OS-ARCH (.exe for Windows)
 ASSET_NAME="itodo-${OS_TYPE}-${ARCH_TYPE}"
+if [ "$OS_TYPE" = "windows" ]; then
+    ASSET_NAME="${ASSET_NAME}.exe"
+fi
 DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/$ASSET_NAME"
 
 TEMP_DIR=$(mktemp -d)
@@ -118,9 +124,15 @@ if [ ! -w "$INSTALL_DIR" ]; then
     fi
 fi
 
-log "Installing $BINARY_NAME to $INSTALL_DIR..."
-$USE_SUDO mv "$TEMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$BINARY_NAME"
-$USE_SUDO chmod +x "$INSTALL_DIR/$BINARY_NAME"
+# Set final binary name (with .exe for Windows)
+FINAL_BINARY_NAME="$BINARY_NAME"
+if [ "$OS_TYPE" = "windows" ]; then
+    FINAL_BINARY_NAME="${BINARY_NAME}.exe"
+fi
 
-success "$BINARY_NAME installed successfully to $INSTALL_DIR/$BINARY_NAME"
-success "Run '$BINARY_NAME' to get started!"
+log "Installing $FINAL_BINARY_NAME to $INSTALL_DIR..."
+$USE_SUDO mv "$TEMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$FINAL_BINARY_NAME"
+$USE_SUDO chmod +x "$INSTALL_DIR/$FINAL_BINARY_NAME"
+
+success "$BINARY_NAME installed successfully to $INSTALL_DIR/$FINAL_BINARY_NAME"
+success "Run '$FINAL_BINARY_NAME' to get started!"
