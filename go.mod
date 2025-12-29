@@ -1,4 +1,4 @@
-module itodo
+module github.com/dasky92/itodo
 
 go 1.24.0
 

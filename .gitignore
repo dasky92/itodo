@@ -1,2 +1,4 @@
 itodo
 *.db
+# Added by goreleaser init:
+dist/

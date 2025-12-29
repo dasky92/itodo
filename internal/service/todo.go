@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"itodo/internal/model"
+	"github.com/dasky92/itodo/internal/model"
 )
 
 // TodoService handles business logic for todos

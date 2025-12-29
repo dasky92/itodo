@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"itodo/internal/config"
-	"itodo/internal/model"
-	"itodo/internal/service"
-	"itodo/internal/tui"
+	"github.com/dasky92/itodo/internal/config"
+	"github.com/dasky92/itodo/internal/model"
+	"github.com/dasky92/itodo/internal/service"
+	"github.com/dasky92/itodo/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

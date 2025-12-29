@@ -1,8 +1,9 @@
 package service
 
 import (
-	"itodo/internal/model"
 	"testing"
+
+	"github.com/dasky92/itodo/internal/model"
 )
 
 func setupTestDB(t *testing.T) {

@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"itodo/internal/config"
+	"github.com/dasky92/itodo/internal/config"
 
 	"github.com/charmbracelet/bubbles/key"
 )

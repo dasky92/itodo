@@ -1,9 +1,9 @@
 package tui
 
 import (
-	"itodo/internal/config"
-	"itodo/internal/model"
-	"itodo/internal/service"
+	"github.com/dasky92/itodo/internal/config"
+	"github.com/dasky92/itodo/internal/model"
+	"github.com/dasky92/itodo/internal/service"
 
 	"time"
 
