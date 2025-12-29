@@ -51,3 +51,28 @@ release:
     ---
 
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+homebrew_casks:
+  - name: itodo
+    repository:
+      owner: dasky92
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/dasky92/itodo
+    description: Simple TUI todo CLI
+    license: MIT
+
+chocolateys:
+  - name: itodo
+    title: itodo
+    authors: dasky92
+    project_url: https://github.com/dasky92/itodo
+    project_source_url: https://github.com/dasky92/itodo
+    docs_url: https://github.com/dasky92/itodo#readme
+    bug_tracker_url: https://github.com/dasky92/itodo/issues
+    license_url: https://github.com/dasky92/itodo/blob/main/LICENSE
+    release_notes: "https://github.com/dasky92/itodo/releases/tag/{{ .Tag }}"
+    url_template: "https://github.com/dasky92/itodo/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    source_repo: "https://push.chocolatey.org/"
+    skip_publish: false
