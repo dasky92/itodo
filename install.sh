@@ -33,12 +33,15 @@ ARCH=$(uname -m)
 case $OS in
     linux)
         OS_TYPE="linux"
+        OS_NAME="Linux"
         ;;
     darwin)
         OS_TYPE="darwin"
+        OS_NAME="Darwin"
         ;;
     msys*|mingw*|cygwin*)
         OS_TYPE="windows"
+        OS_NAME="Windows"
         ;;
     *)
         error "Unsupported operating system: $OS"
@@ -49,24 +52,18 @@ case $ARCH in
     x86_64)
         ARCH_TYPE="x86_64"
         ;;
-    aarch64)
-        ARCH_TYPE="aarch64"
+    aarch64|arm64)
+        ARCH_TYPE="arm64"
         ;;
-    arm64)
-        # For Darwin arm64, we use arm64 as ARCH_NAME in release.yml
-        # but release.yml logic for linux arm64 maps it to aarch64
-        if [ "$OS_TYPE" = "linux" ]; then
-            ARCH_TYPE="aarch64"
-        else
-            ARCH_TYPE="arm64"
-        fi
+    i386|i686)
+        ARCH_TYPE="i386"
         ;;
     *)
         error "Unsupported architecture: $ARCH"
         ;;
 esac
 
-log "Detected OS: $OS_TYPE, Arch: $ARCH_TYPE"
+log "Detected OS: $OS_NAME, Arch: $ARCH_TYPE"
 
 # Get latest release tag
 log "Fetching latest release version..."
@@ -93,11 +90,13 @@ VERSION=${TAG#v}
 log "Latest version: $TAG"
 
 # Construct asset name
-# Matches release workflow format: itodo-OS-ARCH (.exe for Windows)
-ASSET_NAME="itodo-${OS_TYPE}-${ARCH_TYPE}"
+# Matches GoReleaser format: itodo_OS_ARCH.tar.gz (or .zip for Windows)
+ASSET_EXT="tar.gz"
 if [ "$OS_TYPE" = "windows" ]; then
-    ASSET_NAME="${ASSET_NAME}.exe"
+    ASSET_EXT="zip"
 fi
+
+ASSET_NAME="${BINARY_NAME}_${OS_NAME}_${ARCH_TYPE}.${ASSET_EXT}"
 DOWNLOAD_URL="https://github.com/$GITHUB_REPO/releases/download/$TAG/$ASSET_NAME"
 
 TEMP_DIR=$(mktemp -d)
@@ -109,6 +108,17 @@ HTTP_STATUS=$(curl -sL -w "%{http_code}" -o "$TEMP_DIR/$ASSET_NAME" "$DOWNLOAD_U
 
 if [ "$HTTP_STATUS" -ne 200 ]; then
     error "Download failed with status $HTTP_STATUS. URL: $DOWNLOAD_URL"
+fi
+
+log "Extracting $ASSET_NAME..."
+cd "$TEMP_DIR"
+if [ "$OS_TYPE" = "windows" ]; then
+    if ! command -v unzip >/dev/null 2>&1; then
+        error "unzip is required but not found."
+    fi
+    unzip -q "$ASSET_NAME"
+else
+    tar -xzf "$ASSET_NAME"
 fi
 
 # Determine install directory
@@ -130,8 +140,21 @@ if [ "$OS_TYPE" = "windows" ]; then
     FINAL_BINARY_NAME="${BINARY_NAME}.exe"
 fi
 
+# Find binary (it might be in a subdirectory or root)
+if [ -f "$FINAL_BINARY_NAME" ]; then
+    BINARY_PATH="./$FINAL_BINARY_NAME"
+elif [ -f */"$FINAL_BINARY_NAME" ]; then
+    BINARY_PATH=$(find . -name "$FINAL_BINARY_NAME" | head -n 1)
+else
+    # Try searching recursively if not found in immediate subdirectories
+    BINARY_PATH=$(find . -type f -name "$FINAL_BINARY_NAME" | head -n 1)
+    if [ -z "$BINARY_PATH" ]; then
+        error "Could not find binary $FINAL_BINARY_NAME in archive."
+    fi
+fi
+
 log "Installing $FINAL_BINARY_NAME to $INSTALL_DIR..."
-$USE_SUDO mv "$TEMP_DIR/$ASSET_NAME" "$INSTALL_DIR/$FINAL_BINARY_NAME"
+$USE_SUDO mv "$BINARY_PATH" "$INSTALL_DIR/$FINAL_BINARY_NAME"
 $USE_SUDO chmod +x "$INSTALL_DIR/$FINAL_BINARY_NAME"
 
 success "$BINARY_NAME installed successfully to $INSTALL_DIR/$FINAL_BINARY_NAME"
