@@ -1,9 +1,7 @@
 BINARY_NAME=itodo
 INSTALL_DIR=$(HOME)/.local/bin
 
-.PHONY: all build install clean
-
-all: build
+.PHONY: build install clean publish-test publish
 
 build:
 	@go build -o $(BINARY_NAME) .
@@ -18,3 +16,13 @@ install: build
 clean:
 	@rm -f $(BINARY_NAME)
 	@echo "Cleaned: $(BINARY_NAME)"
+
+publish-test:
+	@go mod tidy
+	@goreleaser release --snapshot --clean
+	@echo "Published test successful."
+
+publish:
+	@go mod tidy
+	@goreleaser release --clean
+	@echo "Published successful."
