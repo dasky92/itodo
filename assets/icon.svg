@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景：OneDark 风格深色背景 -->
+  <rect x="0" y="0" width="512" height="512" rx="110" ry="110" fill="#282C34"/>
+
+  <!-- 
+    布局规划：
+    垂直居中分布三行，行间距 120px
+    Line 1 Y: 136
+    Line 2 Y: 256
+    Line 3 Y: 376
+    
+    水平布局：
+    图标中心 X: 100
+    线条起点 X: 170
+  -->
+
+  <!-- 第一行：待办 (红色空心圆 + 短白线) -->
+  <!-- 红色使用 OneDark Red: #E06C75 -->
+  <circle cx="100" cy="136" r="26" stroke="#E06C75" stroke-width="12" fill="none"/>
+  <line x1="170" y1="136" x2="420" y2="136" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- 第二行：待办 (红色空心圆 + 中长白线) -->
+  <circle cx="100" cy="256" r="26" stroke="#E06C75" stroke-width="12" fill="none"/>
+  <line x1="170" y1="256" x2="380" y2="256" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- 第三行：已完成 (绿色对钩 + 长白线) -->
+  <!-- 绿色使用 OneDark Green: #98C379 -->
+  <!-- 对钩路径微调以匹配圆形的视觉重心 -->
+  <path d="M70 376 L94 400 L130 352" stroke="#98C379" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="170" y1="376" x2="420" y2="376" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+
+</svg>

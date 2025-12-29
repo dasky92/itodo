@@ -33,7 +33,7 @@
 brew tap dasky92/tap
 
 # Install itodo
-brew install itodo
+brew install --cask itodo
 ```
 
 ### Chocolatey (Windows)
