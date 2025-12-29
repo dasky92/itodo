@@ -66,6 +66,13 @@ chocolateys:
   - name: itodo
     title: itodo
     authors: dasky92
+    summary: Lightweight TUI todo CLI for terminals
+    description: |
+      itodo is a lightweight terminal TUI todo tool.
+      It supports quick add, check, delete, and theme switching,
+      with an intuitive interface and keyboard shortcuts.
+      Ideal for developers who keep their workflow in the terminal.
+      After installation, run `itodo` to get started.
     project_url: https://github.com/dasky92/itodo
     project_source_url: https://github.com/dasky92/itodo
     docs_url: https://github.com/dasky92/itodo#readme
