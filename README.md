@@ -1,19 +1,19 @@
-# itodo
-
-<p align="center">
+<div align="center">
+  <img src="assets/icon-512.png" alt="itodo logo" width="180" />
+  <h1>itodo</h1>
+  <p>
+    A modern, keyboard-driven terminal-based todo list manager built with <a href="https://github.com/charmbracelet/bubbletea">Bubble Tea</a>.
+  </p>
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#configuration">Configuration</a>
+  </p>
+  <br />
   <img src="demo.gif" alt="itodo demo" width="600" />
-</p>
-
-<p align="center">
-  A modern, keyboard-driven terminal-based todo list manager built with <a href="https://github.com/charmbracelet/bubbletea">Bubble Tea</a>.
-</p>
-
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#configuration">Configuration</a>
-</p>
+  <br />
+</div>
 
 ## ✨ Features
 
