@@ -39,6 +39,8 @@ type KeysConfig struct {
 	Toggle   []string `json:"toggle"`
 	Indent   []string `json:"indent"`
 	Outdent  []string `json:"outdent"`
+	MoveUp   []string `json:"move_up"`
+	MoveDown []string `json:"move_down"`
 	Help     []string `json:"help"`
 	Quit     []string `json:"quit"`
 	Save     []string `json:"save"`
@@ -84,6 +86,8 @@ func DefaultConfig() *Config {
 			Toggle:   []string{"enter", "tab"},
 			Indent:   []string{">", "."},
 			Outdent:  []string{"<", ","},
+			MoveUp:   []string{"K"},
+			MoveDown: []string{"J"},
 			Help:     []string{"?"},
 			Quit:     []string{"q", "ctrl+c"},
 			Save:     []string{"ctrl+s"},

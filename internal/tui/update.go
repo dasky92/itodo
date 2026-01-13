@@ -212,6 +212,65 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 
+			case key.Matches(msg, m.keys.MoveUp):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
+				if len(m.todos) > 0 {
+					todo := m.todos[m.cursor]
+					log, err := m.svc.MoveTodo(m.selectedDate, todo.ID, -1)
+					if err != nil {
+						m.logs = append(m.logs, "Error: "+err.Error())
+					} else {
+						m.logs = append(m.logs, log)
+						m.refreshData()
+						// Cursor follows the item. If successful move up, decrement cursor
+						if m.cursor > 0 {
+							// Check if visual order actually changed (sometimes sort criteria prevents move)
+							// But blindly following direction is usually fine if move succeeded.
+							// Wait, if we are at top, we can't move up.
+							// The service check will return nil if no move happened.
+							// However, simpler to just re-find the ID? 
+							// Or simpler: just decrement if successful.
+							// But we need to know if it ACTUALLY moved. 
+							// The current implementation of MoveTodo returns "Moved todo up/down" on success.
+							// Let's assume if err == nil, it moved.
+							// BUT: MoveTodo returns nil err if it hits bounds or different completion status.
+							// The log message is "Moved todo up/down".
+							// Let's re-find the cursor position by ID to be robust.
+							for i, t := range m.todos {
+								if t.ID == todo.ID {
+									m.cursor = i
+									break
+								}
+							}
+						}
+					}
+				}
+
+			case key.Matches(msg, m.keys.MoveDown):
+				if m.viewType == WeeklyView {
+					return m, nil
+				}
+				if len(m.todos) > 0 {
+					todo := m.todos[m.cursor]
+					log, err := m.svc.MoveTodo(m.selectedDate, todo.ID, 1)
+					if err != nil {
+						m.logs = append(m.logs, "Error: "+err.Error())
+					} else {
+						m.logs = append(m.logs, log)
+						m.refreshData()
+						// Cursor follows the item
+						// Re-find the cursor position by ID to be robust.
+						for i, t := range m.todos {
+							if t.ID == todo.ID {
+								m.cursor = i
+								break
+							}
+						}
+					}
+				}
+
 			case key.Matches(msg, m.keys.Today):
 				m.selectedDate = m.svc.GetCurrentDate()
 				m.refreshData()

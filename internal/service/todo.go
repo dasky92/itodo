@@ -180,6 +180,18 @@ func (s *TodoService) OutdentTodo(date string, id uint) (string, error) {
 	return fmt.Sprintf("Outdented todo '%s'", todo.Title), nil
 }
 
+// MoveTodo moves a todo up or down
+func (s *TodoService) MoveTodo(date string, id uint, direction int) (string, error) {
+	if err := model.MoveTodo(date, id, direction); err != nil {
+		return "", err
+	}
+	dirStr := "up"
+	if direction > 0 {
+		dirStr = "down"
+	}
+	return fmt.Sprintf("Moved todo %s", dirStr), nil
+}
+
 // GetStats returns stats for a date
 func (s *TodoService) GetStats(date string) (int, int, error) {
 	return model.GetStats(date)
