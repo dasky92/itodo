@@ -18,6 +18,7 @@ type Todo struct {
 	IsCompleted bool      `json:"is_completed"`
 	ParentID    *uint     `json:"parent_id"`              // Refers to ID within the same Date
 	Date        string    `gorm:"primaryKey" json:"date"` // Format: YYYY-MM-DD
+	Position    int       `json:"position"`               // Ordering position
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -59,9 +60,34 @@ func GetNextID(date string) (uint, error) {
 	return *maxID + 1, nil
 }
 
+// GetNextPosition calculates the next Position for a given date and parent
+func GetNextPosition(date string, parentID *uint) (int, error) {
+	var maxPos *int
+	query := DB.Model(&Todo{}).Where("date = ?", date)
+	if parentID == nil {
+		query = query.Where("parent_id IS NULL")
+	} else {
+		query = query.Where("parent_id = ?", parentID)
+	}
+
+	err := query.Select("MAX(position)").Scan(&maxPos).Error
+	if err != nil {
+		return 0, err
+	}
+	if maxPos == nil {
+		return 0, nil
+	}
+	return *maxPos + 1, nil
+}
+
 // CreateTodo creates a new todo with manual ID generation
 func CreateTodo(title string, description string, date string) (*Todo, error) {
 	id, err := GetNextID(date)
+	if err != nil {
+		return nil, err
+	}
+
+	pos, err := GetNextPosition(date, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +98,7 @@ func CreateTodo(title string, description string, date string) (*Todo, error) {
 		Description: description,
 		IsCompleted: false,
 		Date:        date,
+		Position:    pos,
 	}
 	result := DB.Create(todo)
 	return todo, result.Error
@@ -135,14 +162,21 @@ func sortTodos(todos []Todo) {
 		for j := 0; j < len(todos)-i-1; j++ {
 			// Sort criteria:
 			// 1. IsCompleted (false < true)
-			// 2. ID (asc)
+			// 2. Position (asc)
+			// 3. ID (asc)
 
 			swap := false
 			if todos[j].IsCompleted && !todos[j+1].IsCompleted {
 				swap = true
 			} else if todos[j].IsCompleted == todos[j+1].IsCompleted {
-				if todos[j].ID > todos[j+1].ID {
+				// Same completion status, check Position
+				if todos[j].Position > todos[j+1].Position {
 					swap = true
+				} else if todos[j].Position == todos[j+1].Position {
+					// Same Position, check ID
+					if todos[j].ID > todos[j+1].ID {
+						swap = true
+					}
 				}
 			}
 
@@ -151,6 +185,101 @@ func sortTodos(todos []Todo) {
 			}
 		}
 	}
+}
+
+// MoveTodo moves a todo up or down within its siblings
+func MoveTodo(date string, id uint, direction int) error {
+	// direction: -1 for up, 1 for down
+	
+	current, err := GetTodoByID(date, id)
+	if err != nil {
+		return err
+	}
+
+	// Fetch all siblings
+	var siblings []Todo
+	query := DB.Where("date = ?", date)
+	if current.ParentID == nil {
+		query = query.Where("parent_id IS NULL")
+	} else {
+		query = query.Where("parent_id = ?", current.ParentID)
+	}
+	
+	if err := query.Find(&siblings).Error; err != nil {
+		return err
+	}
+
+	// Sort siblings to determine order
+	sortTodos(siblings)
+
+	// Find index of current todo
+	idx := -1
+	for i, s := range siblings {
+		if s.ID == current.ID {
+			idx = i
+			break
+		}
+	}
+
+	if idx == -1 {
+		return fmt.Errorf("todo not found in siblings")
+	}
+
+	targetIdx := idx + direction
+	if targetIdx < 0 || targetIdx >= len(siblings) {
+		return nil // Cannot move beyond bounds
+	}
+
+	target := &siblings[targetIdx]
+
+	// Only allow moving within same completion status group
+	if current.IsCompleted != target.IsCompleted {
+		return nil // Cannot move pending past completed or vice versa
+	}
+
+	// Swap positions
+	// If positions are the same, we need to enforce unique positions first?
+	// Simpler approach: Just swap their Position values. 
+	// If they are equal, increment one and decrement other?
+	// Or assign strict index-based positions to all siblings first?
+	
+	// Robust approach: Renormalize positions for the whole group first if needed, 
+	// but simply swapping works if we maintain Position integrity.
+	// Since we introduced Position, existing items might all have 0.
+	// Let's check if we need to initialize positions.
+	
+	if current.Position == target.Position {
+		// If both are 0 (legacy), we need to give them distinct positions.
+		// Actually, let's just reassign positions based on current sorted order
+		// but with the swap applied.
+		for i := range siblings {
+			siblings[i].Position = i
+		}
+		// Now swap in the slice
+		siblings[idx], siblings[targetIdx] = siblings[targetIdx], siblings[idx]
+		// Reassign positions based on new slice order
+		for i := range siblings {
+			siblings[i].Position = i
+			if err := DB.Save(&siblings[i]).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	// Normal case: Swap positions
+	current.Position, target.Position = target.Position, current.Position
+	
+	tx := DB.Begin()
+	if err := tx.Save(current).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Save(target).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }
 
 // GetTodoByID retrieves a todo by Date and ID

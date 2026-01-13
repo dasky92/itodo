@@ -17,6 +17,8 @@ type KeyMap struct {
 	Toggle   key.Binding
 	Indent   key.Binding
 	Outdent  key.Binding
+	MoveUp   key.Binding
+	MoveDown key.Binding
 	Help     key.Binding
 	Quit     key.Binding
 	Save     key.Binding
@@ -35,9 +37,9 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Left, k.Right},
 		{k.New, k.Edit, k.Delete, k.Toggle},
-		{k.Indent, k.Outdent, k.Help, k.Quit},
-		{k.Save, k.Cancel, k.Today, k.Calendar},
-		{k.PrevView, k.NextView},
+		{k.Indent, k.Outdent, k.MoveUp, k.MoveDown},
+		{k.Help, k.Quit, k.Save, k.Cancel},
+		{k.Today, k.Calendar, k.PrevView, k.NextView},
 	}
 }
 
@@ -86,6 +88,14 @@ func InitKeys(cfg *config.Config) KeyMap {
 		Outdent: key.NewBinding(
 			key.WithKeys(cfg.Keys.Outdent...),
 			key.WithHelp(formatHelp(cfg.Keys.Outdent, "outdent")),
+		),
+		MoveUp: key.NewBinding(
+			key.WithKeys(cfg.Keys.MoveUp...),
+			key.WithHelp(formatHelp(cfg.Keys.MoveUp, "move up")),
+		),
+		MoveDown: key.NewBinding(
+			key.WithKeys(cfg.Keys.MoveDown...),
+			key.WithHelp(formatHelp(cfg.Keys.MoveDown, "move down")),
 		),
 		Help: key.NewBinding(
 			key.WithKeys(cfg.Keys.Help...),
