@@ -24,6 +24,7 @@ var (
 	dayStyle           lipgloss.Style
 	selectedDayStyle   lipgloss.Style
 	todayStyle         lipgloss.Style
+	dayMarkerStyle     lipgloss.Style
 
 	// Characters
 	progressFullChar  = "█"
@@ -97,7 +98,9 @@ func InitStyles(theme Theme) {
 	calendarStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(theme.Mauve).
-		Padding(1, 2)
+		PaddingTop(1).
+		PaddingLeft(2).
+		PaddingRight(2)
 
 	monthTitleStyle = lipgloss.NewStyle().
 		Foreground(theme.Blue).
@@ -125,6 +128,12 @@ func InitStyles(theme Theme) {
 	todayStyle = lipgloss.NewStyle().
 		Foreground(theme.Blue).
 		Bold(true).
+		Width(4).
+		Align(lipgloss.Center)
+
+	dayMarkerStyle = lipgloss.NewStyle().
+		Foreground(theme.Gray).
+		Faint(true).
 		Width(4).
 		Align(lipgloss.Center)
 }

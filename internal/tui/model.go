@@ -61,6 +61,7 @@ type Model struct {
 	// Calendar State
 	calendarCursor   time.Time
 	calendarViewDate time.Time // Month being viewed
+	calendarMarks    map[string]string
 
 	// Form Inputs
 	titleInput textinput.Model
@@ -111,6 +112,7 @@ func NewModel(svc *service.TodoService, cfg *config.Config) Model {
 		viewType:       viewType,
 		weeklyTodos:    make(map[string][]model.Todo),
 		weeklyExpanded: make(map[string]bool),
+		calendarMarks:  make(map[string]string),
 		titleInput:     ti,
 		descInput:      ta,
 		focusIndex:     0,
@@ -181,6 +183,35 @@ func (m *Model) refreshData() {
 		}
 
 		m.buildWeeklyItems()
+	}
+}
+
+func (m *Model) refreshCalendarMarks() {
+	m.calendarMarks = make(map[string]string)
+	t := m.calendarViewDate
+	if t.IsZero() {
+		return
+	}
+	year := t.Year()
+	month := t.Month()
+	loc := t.Location()
+	daysInMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, loc).Day()
+	for d := 1; d <= daysInMonth; d++ {
+		date := time.Date(year, month, d, 0, 0, 0, 0, loc)
+		key := date.Format("2006-01-02")
+		completed, pending, err := m.svc.GetStats(key)
+		if err != nil {
+			continue
+		}
+		total := completed + pending
+		if total == 0 {
+			continue
+		}
+		if pending > 0 {
+			m.calendarMarks[key] = "○"
+		} else {
+			m.calendarMarks[key] = "●"
+		}
 	}
 }
 
