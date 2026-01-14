@@ -449,49 +449,79 @@ func (m Model) calendarView() string {
 	daysInMonth := time.Date(year, t.Month()+1, 0, 0, 0, 0, 0, t.Location()).Day()
 
 	var rows []string
-	var currentRow []string
+	var dayRow []string
+	var markerRow []string
 
-	// Padding for first row
 	for i := 0; i < startWeekday; i++ {
-		currentRow = append(currentRow, dayStyle.Render(" "))
+		dayRow = append(dayRow, dayStyle.Render("  "))
+		markerRow = append(markerRow, dayMarkerStyle.Render("   "))
 	}
 
 	for d := 1; d <= daysInMonth; d++ {
 		date := time.Date(year, t.Month(), d, 0, 0, 0, 0, t.Location())
-		dateStr := fmt.Sprintf("%d", d)
-
-		var style lipgloss.Style
+		key := date.Format("2006-01-02")
+		marker := ""
+		if m.calendarMarks != nil {
+			if v, ok := m.calendarMarks[key]; ok {
+				marker = v
+			}
+		}
 
 		isCursor := date.Year() == m.calendarCursor.Year() && date.Month() == m.calendarCursor.Month() && date.Day() == m.calendarCursor.Day()
 		isToday := date.Year() == time.Now().Year() && date.Month() == time.Now().Month() && date.Day() == time.Now().Day()
 
+		dayText := fmt.Sprintf("%2d", d)
+		var dayStyleToUse lipgloss.Style
 		if isCursor {
-			style = selectedDayStyle
+			dayStyleToUse = selectedDayStyle
 		} else if isToday {
-			style = todayStyle
+			dayStyleToUse = todayStyle
 		} else {
-			style = dayStyle
+			dayStyleToUse = dayStyle
 		}
 
-		currentRow = append(currentRow, style.Render(dateStr))
+		dayCell := dayStyleToUse.Render(dayText)
+		dayRow = append(dayRow, dayCell)
 
-		if len(currentRow) == 7 {
-			rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Center, currentRow...))
-			currentRow = []string{}
+		markerText := "  "
+		if marker != "" {
+			markerText = " " + marker
+		}
+
+		markerCell := dayMarkerStyle.Render(markerText)
+		markerRow = append(markerRow, markerCell)
+
+		if len(dayRow) == 7 {
+			weekDays := lipgloss.JoinHorizontal(lipgloss.Center, dayRow...)
+			weekMarks := lipgloss.JoinHorizontal(lipgloss.Center, markerRow...)
+			weekBlock := lipgloss.JoinVertical(lipgloss.Center, weekDays, weekMarks)
+			rows = append(rows, weekBlock)
+			dayRow = []string{}
+			markerRow = []string{}
 		}
 	}
 
-	// Fill last row
-	if len(currentRow) > 0 {
-		for len(currentRow) < 7 {
-			currentRow = append(currentRow, dayStyle.Render(" "))
+	if len(dayRow) > 0 {
+		for len(dayRow) < 7 {
+			dayRow = append(dayRow, dayStyle.Render(" "))
+			markerRow = append(markerRow, dayMarkerStyle.Render("   "))
 		}
-		rows = append(rows, lipgloss.JoinHorizontal(lipgloss.Center, currentRow...))
+		weekDays := lipgloss.JoinHorizontal(lipgloss.Center, dayRow...)
+		weekMarks := lipgloss.JoinHorizontal(lipgloss.Center, markerRow...)
+		weekBlock := lipgloss.JoinVertical(lipgloss.Center, weekDays, weekMarks)
+		rows = append(rows, weekBlock)
 	}
 
 	calendarBody := lipgloss.JoinVertical(lipgloss.Center, rows...)
 
-	cal := lipgloss.JoinVertical(lipgloss.Center, header, headerRow, calendarBody)
+	sectionSpacer := "\n"
+	cal := lipgloss.JoinVertical(
+		lipgloss.Center,
+		header,
+		sectionSpacer,
+		headerRow,
+		calendarBody,
+	)
 
 	// Footer instructions
 	footer := statusStyle.Render("Arrows: Move • Space: Today • Enter: Select • Esc: Cancel")

@@ -35,29 +35,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				now := time.Now()
 				m.calendarCursor = now
 				m.calendarViewDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+				m.refreshCalendarMarks()
 
 			case key.Matches(msg, m.keys.Left):
 				m.calendarCursor = m.calendarCursor.AddDate(0, 0, -1)
 				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
 					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+					m.refreshCalendarMarks()
 				}
 
 			case key.Matches(msg, m.keys.Right):
 				m.calendarCursor = m.calendarCursor.AddDate(0, 0, 1)
 				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
 					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+					m.refreshCalendarMarks()
 				}
 
 			case key.Matches(msg, m.keys.Up):
 				m.calendarCursor = m.calendarCursor.AddDate(0, 0, -7)
 				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
 					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+					m.refreshCalendarMarks()
 				}
 
 			case key.Matches(msg, m.keys.Down):
 				m.calendarCursor = m.calendarCursor.AddDate(0, 0, 7)
 				if m.calendarCursor.Month() != m.calendarViewDate.Month() || m.calendarCursor.Year() != m.calendarViewDate.Year() {
 					m.calendarViewDate = time.Date(m.calendarCursor.Year(), m.calendarCursor.Month(), 1, 0, 0, 0, 0, m.calendarCursor.Location())
+					m.refreshCalendarMarks()
 				}
 			}
 
@@ -230,9 +235,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							// But blindly following direction is usually fine if move succeeded.
 							// Wait, if we are at top, we can't move up.
 							// The service check will return nil if no move happened.
-							// However, simpler to just re-find the ID? 
+							// However, simpler to just re-find the ID?
 							// Or simpler: just decrement if successful.
-							// But we need to know if it ACTUALLY moved. 
+							// But we need to know if it ACTUALLY moved.
 							// The current implementation of MoveTodo returns "Moved todo up/down" on success.
 							// Let's assume if err == nil, it moved.
 							// BUT: MoveTodo returns nil err if it hits bounds or different completion status.
@@ -283,6 +288,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.calendarCursor = t
 				m.calendarViewDate = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+				m.refreshCalendarMarks()
 
 			case key.Matches(msg, m.keys.Help):
 				m.mode = Helping
