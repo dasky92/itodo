@@ -4,27 +4,29 @@ import "github.com/charmbracelet/lipgloss"
 
 var (
 	// Styles
-	appStyle           lipgloss.Style
-	dateStyle          lipgloss.Style
-	titleStyle         lipgloss.Style
-	statsStyle         lipgloss.Style
-	progressStyle      lipgloss.Style
-	progressEmptyStyle lipgloss.Style
-	dividerStyle       lipgloss.Style
-	selectedItemStyle  lipgloss.Style
-	completedItemStyle lipgloss.Style
-	normalItemStyle    lipgloss.Style
-	statusStyle        lipgloss.Style
-	logStyle           lipgloss.Style
-	formTitleStyle     lipgloss.Style
-	labelStyle         lipgloss.Style
-	calendarStyle      lipgloss.Style
-	monthTitleStyle    lipgloss.Style
-	weekdayStyle       lipgloss.Style
-	dayStyle           lipgloss.Style
-	selectedDayStyle   lipgloss.Style
-	todayStyle         lipgloss.Style
-	dayMarkerStyle     lipgloss.Style
+	appStyle                lipgloss.Style
+	dateStyle               lipgloss.Style
+	titleStyle              lipgloss.Style
+	statsStyle              lipgloss.Style
+	progressStyle           lipgloss.Style
+	progressEmptyStyle      lipgloss.Style
+	dividerStyle            lipgloss.Style
+	selectedItemStyle       lipgloss.Style
+	completedItemStyle      lipgloss.Style
+	normalItemStyle         lipgloss.Style
+	statusStyle             lipgloss.Style
+	logStyle                lipgloss.Style
+	formTitleStyle          lipgloss.Style
+	labelStyle              lipgloss.Style
+	calendarStyle           lipgloss.Style
+	monthTitleStyle         lipgloss.Style
+	weekdayStyle            lipgloss.Style
+	dayStyle                lipgloss.Style
+	selectedDayStyle        lipgloss.Style
+	todayStyle              lipgloss.Style
+	dayMarkerStyle          lipgloss.Style
+	dayMarkerPendingStyle   lipgloss.Style
+	dayMarkerCompletedStyle lipgloss.Style
 
 	// Characters
 	progressFullChar  = "█"
@@ -133,7 +135,16 @@ func InitStyles(theme Theme) {
 
 	dayMarkerStyle = lipgloss.NewStyle().
 		Foreground(theme.Gray).
-		Faint(true).
+		Width(4).
+		Align(lipgloss.Center)
+
+	dayMarkerPendingStyle = lipgloss.NewStyle().
+		Foreground(theme.Red).
+		Width(4).
+		Align(lipgloss.Center)
+
+	dayMarkerCompletedStyle = lipgloss.NewStyle().
+		Foreground(theme.Green).
 		Width(4).
 		Align(lipgloss.Center)
 }
