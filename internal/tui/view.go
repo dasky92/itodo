@@ -488,7 +488,17 @@ func (m Model) calendarView() string {
 			markerText = " " + marker
 		}
 
-		markerCell := dayMarkerStyle.Render(markerText)
+		var currentMarkerStyle lipgloss.Style
+		switch marker {
+		case "○":
+			currentMarkerStyle = dayMarkerPendingStyle
+		case "●":
+			currentMarkerStyle = dayMarkerCompletedStyle
+		default:
+			currentMarkerStyle = dayMarkerStyle
+		}
+
+		markerCell := currentMarkerStyle.Render(markerText)
 		markerRow = append(markerRow, markerCell)
 
 		if len(dayRow) == 7 {
