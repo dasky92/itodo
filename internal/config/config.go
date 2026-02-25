@@ -171,7 +171,7 @@ func LoadConfig() (*Config, error) {
 					ShowFullHelp:    defaultCfg.UI.ShowFullHelp,
 				},
 				Input: CommentedInput{
-					Help:           "Input field dimensions and limits",
+					Help:           "Input field dimensions and limits. title_width and desc_width also control line wrap length (text wraps at this width)",
 					TitleCharLimit: defaultCfg.Input.TitleCharLimit,
 					TitleWidth:     defaultCfg.Input.TitleWidth,
 					DescHeight:     defaultCfg.Input.DescHeight,

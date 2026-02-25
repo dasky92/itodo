@@ -27,11 +27,12 @@ func (m Model) View() string {
 		}
 		divider := dividerStyle.Render(strings.Repeat("┈", width))
 
+		// Title uses textarea with SetWidth from config so it wraps natively
 		return appStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
 			formTitleStyle.Render(title),
 
 			labelStyle.Render("Title"),
-			m.titleInput.View(),
+			m.titleArea.View(),
 
 			labelStyle.Render("Description"),
 			m.descInput.View(),

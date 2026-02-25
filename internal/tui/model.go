@@ -9,7 +9,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -64,8 +63,8 @@ type Model struct {
 	calendarMarks    map[string]string
 
 	// Form Inputs
-	titleInput textinput.Model
-	descInput  textarea.Model
+	titleArea textarea.Model
+	descInput textarea.Model
 	focusIndex int // 0: Title, 1: Description
 
 	help      help.Model
@@ -83,12 +82,15 @@ type Model struct {
 }
 
 func NewModel(svc *service.TodoService, cfg *config.Config) Model {
-	// Initialize Title Input
-	ti := textinput.New()
-	ti.Placeholder = "Task Title"
-	ti.Focus()
-	ti.CharLimit = cfg.Input.TitleCharLimit
-	ti.Width = cfg.Input.TitleWidth
+	// Initialize Title (textarea with 2 lines so it wraps at config width)
+	titleArea := textarea.New()
+	titleArea.Placeholder = "Task Title"
+	titleArea.ShowLineNumbers = false
+	titleArea.SetHeight(2)
+	titleArea.SetWidth(cfg.Input.TitleWidth)
+	if cfg.Input.TitleWidth <= 0 {
+		titleArea.SetWidth(50)
+	}
 
 	// Initialize Description Textarea
 	ta := textarea.New()
@@ -113,7 +115,7 @@ func NewModel(svc *service.TodoService, cfg *config.Config) Model {
 		weeklyTodos:    make(map[string][]model.Todo),
 		weeklyExpanded: make(map[string]bool),
 		calendarMarks:  make(map[string]string),
-		titleInput:     ti,
+		titleArea:      titleArea,
 		descInput:      ta,
 		focusIndex:     0,
 		help:           h,
@@ -251,5 +253,5 @@ func (m *Model) buildWeeklyItems() {
 }
 
 func (m Model) Init() tea.Cmd {
-	return textinput.Blink
+	return textarea.Blink
 }

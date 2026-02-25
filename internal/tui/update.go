@@ -1,10 +1,11 @@
 package tui
 
 import (
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -17,7 +18,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.help.Width = msg.Width
-		m.descInput.SetWidth(msg.Width - 10) // Adjust textarea width
+		// Use config wrap width, capped by terminal to avoid overflow
+		maxW := msg.Width - 10
+		if maxW < 40 {
+			maxW = 40
+		}
+		descW := m.cfg.Input.DescWidth
+		if descW <= 0 {
+			descW = 50
+		}
+		if descW > maxW {
+			descW = maxW
+		}
+		m.descInput.SetWidth(descW)
+		titleW := m.cfg.Input.TitleWidth
+		if titleW <= 0 {
+			titleW = 50
+		}
+		if titleW > maxW {
+			titleW = maxW
+		}
+		m.titleArea.SetWidth(titleW)
 
 	case tea.KeyMsg:
 		switch m.mode {
@@ -125,12 +146,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.mode = Adding
-				m.titleInput.SetValue("")
+				m.titleArea.SetValue("")
 				m.descInput.SetValue("")
-				m.titleInput.Focus()
+				m.titleArea.Focus()
 				m.descInput.Blur()
 				m.focusIndex = 0
-				return m, textinput.Blink
+				return m, textarea.Blink
 
 			case key.Matches(msg, m.keys.Edit):
 				if m.viewType == WeeklyView {
@@ -140,12 +161,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.mode = Editing
 					todo := m.todos[m.cursor]
 					m.editID = todo.ID
-					m.titleInput.SetValue(todo.Title)
+					m.titleArea.SetValue(todo.Title)
 					m.descInput.SetValue(todo.Description)
-					m.titleInput.Focus()
+					m.titleArea.Focus()
 					m.descInput.Blur()
 					m.focusIndex = 0
-					return m, textinput.Blink
+					return m, textarea.Blink
 				}
 
 			case key.Matches(msg, m.keys.Delete):
@@ -307,11 +328,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch {
 			case key.Matches(msg, m.keys.Cancel): // Esc
 				m.mode = Normal
-				m.titleInput.Blur()
+				m.titleArea.Blur()
 				m.descInput.Blur()
 
 			case key.Matches(msg, m.keys.Save): // Ctrl+S
-				title := m.titleInput.Value()
+				title := strings.TrimSpace(strings.ReplaceAll(m.titleArea.Value(), "\n", " "))
 				desc := m.descInput.Value()
 
 				if title != "" {
@@ -330,7 +351,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.logs = append(m.logs, log)
 						m.refreshData()
 						m.mode = Normal
-						m.titleInput.Blur()
+						m.titleArea.Blur()
 						m.descInput.Blur()
 					}
 				}
@@ -339,18 +360,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex = (m.focusIndex + 1) % 2
 				if m.focusIndex == 0 {
 					m.descInput.Blur()
-					m.titleInput.Focus()
+					m.titleArea.Focus()
 				} else {
-					m.titleInput.Blur()
+					m.titleArea.Blur()
 					m.descInput.Focus()
 				}
 				return m, nil
 
 			case msg.String() == "enter":
 				if m.focusIndex == 0 {
-					// In title, Enter moves to Description
+					// In title, Enter moves to Description (do not insert newline in title)
 					m.focusIndex = 1
-					m.titleInput.Blur()
+					m.titleArea.Blur()
 					m.descInput.Focus()
 					return m, nil
 				}
@@ -362,7 +383,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Update inputs if in Form mode
 	if m.mode == Adding || m.mode == Editing {
 		if m.focusIndex == 0 {
-			m.titleInput, cmd = m.titleInput.Update(msg)
+			m.titleArea, cmd = m.titleArea.Update(msg)
 			cmds = append(cmds, cmd)
 		} else {
 			m.descInput, cmd = m.descInput.Update(msg)
